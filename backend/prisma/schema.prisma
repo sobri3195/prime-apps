@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
+
+  patient Patient?
+}
+
+model Patient {
+  id                  String   @id @default(cuid())
+  userId               String   @unique
+  medicalRecordNumber String   @unique
+  diabetesHistory     Boolean  @default(false)
+  hypertensionHistory Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user      User             @relation(fields: [userId], references: [id])
+  screening AiEyeScreening[]
+}
+
+model AiEyeScreening {
+  id               String   @id @default(cuid())
+  patientId        String
+  chiefComplaint   String
+  symptoms         String[]
+  duration         String
+  painLevel        Int
+  blurredVision    Boolean  @default(false)
+  traumaHistory    Boolean  @default(false)
+  riskScore        Int
+  riskLevel        String
+  recommendation   String?
+  educationContent String?
+  uploadedEyePhoto String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id])
+}
