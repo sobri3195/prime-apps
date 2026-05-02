@@ -6,7 +6,9 @@ export class AiEyeService {
 
   createScreening(payload: Record<string, unknown>) {
     const painLevel = Number(payload.painLevel ?? 0);
-    const riskScore = painLevel + (payload.blurredVision ? 3 : 0) + (payload.traumaHistory ? 4 : 0);
+    const blurredVision = Boolean(payload.blurredVision);
+    const traumaHistory = Boolean(payload.traumaHistory);
+    const riskScore = painLevel + (blurredVision ? 3 : 0) + (traumaHistory ? 4 : 0);
     const riskLevel = riskScore >= 8 ? 'HIGH' : riskScore >= 4 ? 'MEDIUM' : 'LOW';
 
     const result = {
