@@ -3,7 +3,7 @@ import { BottomNavigation } from '@/components/bottom-navigation/BottomNavigatio
 
 export function AppShell() {
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-white pb-24 shadow-sm">
+    <div className="mx-auto min-h-[932px] w-full max-w-[430px] bg-slate-50 pb-24 shadow-xl shadow-slate-200">
       <main className="px-4 py-4">
         <Outlet />
       </main>
