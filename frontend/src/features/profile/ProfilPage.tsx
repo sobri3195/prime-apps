@@ -16,6 +16,7 @@ import {
   UserRound,
   Users,
 } from 'lucide-react';
+import { BadgeSection, PointsStreakCard, RewardSection } from '../gamification/GamificationComponents';
 
 const familyMembers = [
   { role: 'Ibu', rm: 'RM-2026-00110', status: 'Aktif' },
@@ -68,6 +69,10 @@ export function ProfilPage() {
           Edit Profil
         </button>
       </article>
+
+      <PointsStreakCard />
+
+      <BadgeSection />
 
       <article className="rounded-[20px] bg-white p-4 shadow-md shadow-slate-200/70">
         <h2 className="text-base font-semibold text-slate-900">Informasi Akun</h2>
@@ -158,6 +163,8 @@ export function ProfilPage() {
           ))}
         </div>
       </article>
+
+      <RewardSection />
 
       <button className="w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100">
         Keluar Akun
