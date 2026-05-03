@@ -11,7 +11,7 @@ const menus = [
 
 export function BottomNavigation() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-[430px] border-t border-cyan-100 bg-white/95 px-1 backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-[430px] border-t border-cyan-100 bg-white/95 px-1 pb-1 backdrop-blur">
       <ul className="grid grid-cols-5">
         {menus.map(({ path, label, icon: Icon }) => (
           <li key={path}>
@@ -26,8 +26,8 @@ export function BottomNavigation() {
               {({ isActive }) => (
                 <>
                   <span
-                    className={`flex h-7 w-7 items-center justify-center rounded-lg ${
-                      isActive ? 'bg-cyan-100 text-cyan-700' : 'text-slate-500'
+                    className={`flex h-8 w-8 items-center justify-center rounded-xl ${
+                      isActive ? 'bg-cyan-600 text-white shadow-md shadow-cyan-200' : 'text-slate-500'
                     }`}
                   >
                     <Icon size={16} />
