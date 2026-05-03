@@ -12,6 +12,7 @@ import {
   Sparkles,
   Stethoscope,
 } from 'lucide-react';
+import { RewardSection } from '../gamification/GamificationComponents';
 
 const categories = [
   { name: 'Kacamata', icon: Glasses },
@@ -172,6 +173,8 @@ export function MarketplacePage() {
           ))}
         </div>
       </section>
+
+      <RewardSection />
 
       <p className="text-center text-xs text-slate-400">Butuh bantuan memilih? Tim Klinik Utama Prime siap membantu Anda 🤍</p>
     </section>

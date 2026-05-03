@@ -12,6 +12,7 @@ import {
   Sparkles,
   Stethoscope,
 } from 'lucide-react';
+import { DailyWinsCard } from '../gamification/GamificationComponents';
 
 const quickActions = [
   {
@@ -122,6 +123,8 @@ export function BerandaPage() {
         </div>
       </article>
 
+      <DailyWinsCard />
+
       <section className="rounded-3xl border border-cyan-100 bg-white p-4 shadow-sm shadow-cyan-50">
         <h3 className="text-sm font-semibold text-slate-900">Menu Cepat</h3>
         <div className="mt-3 grid grid-cols-4 gap-2">
@@ -135,6 +138,8 @@ export function BerandaPage() {
           ))}
         </div>
       </section>
+
+      <DailyWinsCard />
 
       <section className="rounded-3xl border border-cyan-100 bg-white p-4 shadow-sm shadow-cyan-50">
         <p className="text-xs font-semibold uppercase tracking-wide text-cyan-600">Tips Kesehatan Mata</p>
