@@ -1,4 +1,4 @@
-import { Brain, House, ShoppingBag, UserRound, ChartNoAxesCombined } from 'lucide-react';
+import { Brain, ChartNoAxesCombined, House, ShoppingBag, UserRound } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const menus = [
@@ -11,20 +11,30 @@ const menus = [
 
 export function BottomNavigation() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-md border-t bg-white/95 backdrop-blur supports-[padding:max(0px)]:pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+    <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-[430px] border-t border-cyan-100 bg-white/95 px-1 backdrop-blur">
       <ul className="grid grid-cols-5">
         {menus.map(({ path, label, icon: Icon }) => (
           <li key={path}>
             <NavLink
               to={path}
               className={({ isActive }) =>
-                `flex min-h-16 flex-col items-center justify-center gap-1 text-[11px] transition-all ${
-                  isActive ? 'text-cyan-600' : 'text-slate-500'
+                `flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] transition-all ${
+                  isActive ? 'text-cyan-700' : 'text-slate-500'
                 }`
               }
             >
-              <Icon size={18} />
-              <span>{label}</span>
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={`flex h-7 w-7 items-center justify-center rounded-lg ${
+                      isActive ? 'bg-cyan-100 text-cyan-700' : 'text-slate-500'
+                    }`}
+                  >
+                    <Icon size={16} />
+                  </span>
+                  <span className={isActive ? 'font-semibold' : 'font-medium'}>{label}</span>
+                </>
+              )}
             </NavLink>
           </li>
         ))}
