@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-labelledby="title desc">
+  <title id="title">Tetes mata lubricant</title>
+  <desc id="desc">Ilustrasi botol tetes mata lubricant berwarna putih dan cyan.</desc>
+  <defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#eff6ff"/><stop offset="1" stop-color="#a5f3fc"/></linearGradient></defs>
+  <rect width="320" height="240" rx="32" fill="url(#bg)"/>
+  <circle cx="73" cy="57" r="34" fill="#fff" opacity=".58"/>
+  <g transform="rotate(-12 160 120)">
+    <rect x="122" y="54" width="76" height="124" rx="20" fill="#fff" stroke="#0891b2" stroke-width="6"/>
+    <path d="M138 42h44c7 0 12 5 12 12v13h-68V54c0-7 5-12 12-12Z" fill="#0e7490"/>
+    <rect x="136" y="94" width="48" height="44" rx="14" fill="#cffafe"/>
+    <path d="M160 99c14 15 20 25 20 34 0 11-9 20-20 20s-20-9-20-20c0-9 6-19 20-34Z" fill="#22d3ee"/>
+  </g>
+  <path d="M231 68c13 17 19 29 19 38 0 11-9 20-19 20s-20-9-20-20c0-9 7-21 20-38Z" fill="#38bdf8" opacity=".75"/>
+</svg>

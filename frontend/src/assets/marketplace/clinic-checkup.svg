@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-labelledby="title desc">
+  <title id="title">Pemeriksaan mata klinik</title>
+  <desc id="desc">Ilustrasi ruang klinik dengan dokter dan alat pemeriksaan mata.</desc>
+  <defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#ecfeff"/><stop offset="1" stop-color="#dbeafe"/></linearGradient></defs>
+  <rect width="320" height="240" rx="32" fill="url(#bg)"/>
+  <rect x="34" y="66" width="252" height="128" rx="26" fill="#fff" opacity=".9"/>
+  <circle cx="118" cy="105" r="23" fill="#f8c9a4"/>
+  <path d="M78 179c7-34 25-51 40-51s33 17 40 51" fill="#0891b2"/>
+  <path d="M93 142h50v40H93z" fill="#fff" opacity=".9"/>
+  <rect x="174" y="78" width="80" height="74" rx="17" fill="#0f172a"/>
+  <circle cx="214" cy="115" r="25" fill="#67e8f9" opacity=".85"/>
+  <path d="M189 115c16-15 34-15 50 0-16 15-34 15-50 0Z" fill="#ecfeff"/>
+  <circle cx="214" cy="115" r="8" fill="#0369a1"/>
+  <rect x="204" y="152" width="20" height="36" rx="8" fill="#334155"/>
+</svg>

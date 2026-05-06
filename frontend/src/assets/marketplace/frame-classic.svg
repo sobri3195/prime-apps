@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-labelledby="title desc">
+  <title id="title">Frame kacamata klasik</title>
+  <desc id="desc">Ilustrasi kacamata dengan frame navy di atas latar klinik cyan.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ecfeff"/>
+      <stop offset="1" stop-color="#bae6fd"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#0891b2" flood-opacity=".18"/>
+    </filter>
+  </defs>
+  <rect width="320" height="240" rx="32" fill="url(#bg)"/>
+  <circle cx="252" cy="42" r="46" fill="#fff" opacity=".55"/>
+  <circle cx="54" cy="194" r="54" fill="#67e8f9" opacity=".35"/>
+  <g filter="url(#shadow)">
+    <path d="M46 122c10-31 63-38 91-10l15 15 16-15c28-28 81-21 91 10 11 34-19 66-56 61-28-4-43-24-51-39-8 15-23 35-51 39-37 5-67-27-55-61Z" fill="#0f172a"/>
+    <path d="M65 125c8-17 42-20 61-3 14 12 17 35 4 45-14 10-55 8-66-8-7-10-5-23 1-34Z" fill="#e0f2fe"/>
+    <path d="M239 125c-8-17-42-20-61-3-14 12-17 35-4 45 14 10 55 8 66-8 7-10 5-23-1-34Z" fill="#e0f2fe"/>
+    <path d="M139 127c8-8 18-8 26 0" fill="none" stroke="#0f172a" stroke-width="11" stroke-linecap="round"/>
+  </g>
+</svg>
