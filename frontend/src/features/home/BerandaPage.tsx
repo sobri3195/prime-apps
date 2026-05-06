@@ -12,7 +12,9 @@ import {
   Sparkles,
   Stethoscope,
 } from 'lucide-react';
+import { useState } from 'react';
 import { DailyWinsCard } from '../gamification/GamificationComponents';
+import { POINT_RULES, useGamificationStore } from '../gamification/gamificationStore';
 
 const quickActions = [
   {
@@ -37,6 +39,41 @@ const quickMenus = [
 ];
 
 export function BerandaPage() {
+  const [feedback, setFeedback] = useState('');
+  const { addPoints, completeMission } = useGamificationStore();
+  const userId = 'patient-001';
+
+  const handleQuickAction = (title: string) => {
+    if (title === 'Booking Pemeriksaan') {
+      addPoints(userId, 'booking_created', POINT_RULES.booking_created, 'Booking pemeriksaan dari Beranda');
+      setFeedback('Booking pemeriksaan dicatat. +25 poin Daily Wins.');
+      return;
+    }
+
+    setFeedback('Silakan lanjut ke AI Mata. Misi AI Screening akan selesai setelah form dikirim.');
+  };
+
+  const handleQuickMenu = (title: string) => {
+    if (title === 'Edukasi Mata') {
+      const result = completeMission(userId, 'read-eye-tips');
+      setFeedback(result.message);
+      return;
+    }
+
+    if (title === 'Riwayat Pemeriksaan') {
+      addPoints(userId, 'clinic_exam_completed', POINT_RULES.clinic_exam_completed, 'Pemeriksaan klinik selesai');
+      setFeedback('Pemeriksaan selesai dicatat. +50 poin Daily Wins.');
+      return;
+    }
+
+    if (title === 'Hasil AI Mata') {
+      setFeedback('Hasil AI Mata siap ditinjau di menu Laporan Kesehatan Mata.');
+      return;
+    }
+
+    setFeedback('Data resep kacamata siap dilihat.');
+  };
+
   return (
     <section className="space-y-4 pb-3">
       <header className="flex items-start justify-between rounded-3xl bg-white px-1 pb-1 pt-2">
@@ -77,6 +114,8 @@ export function BerandaPage() {
           return (
             <button
               key={action.title}
+              type="button"
+              onClick={() => handleQuickAction(action.title)}
               className={`rounded-2xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                 action.primary
                   ? 'border-cyan-500 bg-cyan-600 text-white shadow-md shadow-cyan-100'
@@ -90,6 +129,10 @@ export function BerandaPage() {
           );
         })}
       </div>
+
+      {feedback && (
+        <p className="rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">{feedback}</p>
+      )}
 
       <article className="rounded-3xl border border-cyan-100 bg-white p-4 shadow-sm shadow-cyan-50">
         <div className="flex items-start justify-between gap-3">
@@ -123,13 +166,11 @@ export function BerandaPage() {
         </div>
       </article>
 
-      <DailyWinsCard />
-
       <section className="rounded-3xl border border-cyan-100 bg-white p-4 shadow-sm shadow-cyan-50">
         <h3 className="text-sm font-semibold text-slate-900">Menu Cepat</h3>
         <div className="mt-3 grid grid-cols-4 gap-2">
           {quickMenus.map(({ title, icon: Icon }) => (
-            <button key={title} className="space-y-2 rounded-2xl bg-cyan-50/70 p-2.5 text-center">
+            <button key={title} type="button" onClick={() => handleQuickMenu(title)} className="space-y-2 rounded-2xl bg-cyan-50/70 p-2.5 text-center">
               <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-white text-cyan-700 shadow-sm">
                 <Icon className="h-4 w-4" />
               </span>

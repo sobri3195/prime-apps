@@ -12,7 +12,9 @@ import {
   Sparkles,
   Stethoscope,
 } from 'lucide-react';
+import { useState } from 'react';
 import { RewardSection } from '../gamification/GamificationComponents';
+import { POINT_RULES, useGamificationStore } from '../gamification/gamificationStore';
 
 const categories = [
   { name: 'Kacamata', icon: Glasses },
@@ -43,6 +45,20 @@ const trustCards = [
 ];
 
 export function MarketplacePage() {
+  const [feedback, setFeedback] = useState('');
+  const addPoints = useGamificationStore((state) => state.addPoints);
+  const userId = 'patient-001';
+
+  const rewardMarketplacePurchase = (itemName: string) => {
+    addPoints(userId, 'marketplace_purchase', POINT_RULES.marketplace_purchase, `Pembelian marketplace: ${itemName}`);
+    setFeedback(`Pembelian ${itemName} dicatat. +20 poin Daily Wins.`);
+  };
+
+  const rewardBooking = (serviceTitle: string) => {
+    addPoints(userId, 'booking_created', POINT_RULES.booking_created, `Booking layanan: ${serviceTitle}`);
+    setFeedback(`Booking ${serviceTitle} berhasil. +25 poin Daily Wins.`);
+  };
+
   return (
     <section className="space-y-4 pb-3">
       <header className="flex items-start justify-between rounded-3xl bg-white px-1 pb-1 pt-2">
@@ -68,6 +84,10 @@ export function MarketplacePage() {
           <Filter className="h-4 w-4" />
         </button>
       </div>
+
+      {feedback && (
+        <p className="rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">{feedback}</p>
+      )}
 
       <article className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-500 via-cyan-600 to-blue-600 p-5 text-white shadow-lg shadow-cyan-200">
         <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/20 blur-sm" />
@@ -124,7 +144,12 @@ export function MarketplacePage() {
               <p className="mt-1 text-xs text-slate-500">{desc}</p>
               <div className="mt-3 flex items-center justify-between">
                 <p className="text-sm font-semibold text-cyan-700">{price}</p>
-                <button className="rounded-xl bg-cyan-600 p-2 text-white shadow-sm shadow-cyan-200">
+                <button
+                  type="button"
+                  onClick={() => rewardMarketplacePurchase(name)}
+                  className="rounded-xl bg-cyan-600 p-2 text-white shadow-sm shadow-cyan-200"
+                  aria-label={`Beli ${name}`}
+                >
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
@@ -146,7 +171,13 @@ export function MarketplacePage() {
                   <p className="mt-2 text-sm font-semibold text-slate-900">{title}</p>
                   <p className="mt-1 text-xs text-slate-500">{desc}</p>
                 </div>
-                <button className="rounded-xl bg-cyan-600 px-3 py-2 text-xs font-medium text-white">Booking</button>
+                <button
+                  type="button"
+                  onClick={() => rewardBooking(title)}
+                  className="rounded-xl bg-cyan-600 px-3 py-2 text-xs font-medium text-white"
+                >
+                  Booking
+                </button>
               </div>
               <p className="mt-2 text-sm font-semibold text-cyan-700">{price}</p>
             </article>

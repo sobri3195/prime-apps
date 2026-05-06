@@ -1,13 +1,18 @@
-import { ArrowRight, Camera, Save } from 'lucide-react';
+import { ArrowRight, Camera, CheckCircle2, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { aiEyeSchema, type AiEyeFormValues } from '@/schemas/aiEyeSchema';
 import { useCreateAiScreening } from '@/services/aiEye';
+import { useGamificationStore, POINT_RULES } from '@/features/gamification/gamificationStore';
+import { useState } from 'react';
 
 const symptomOptions = ['Mata merah', 'Buram', 'Nyeri', 'Gatal', 'Berair', 'Silau', 'Kering', 'Bengkak'];
 
 export function AiEyeScreeningForm() {
   const mutation = useCreateAiScreening();
+  const [dailyWinsMessage, setDailyWinsMessage] = useState('');
+  const { completeMission, addPoints } = useGamificationStore();
+  const userId = 'patient-001';
   const { register, handleSubmit, setValue, watch } = useForm<AiEyeFormValues>({
     resolver: zodResolver(aiEyeSchema),
     defaultValues: {
@@ -23,9 +28,28 @@ export function AiEyeScreeningForm() {
   const selectedSymptoms = watch('symptoms');
   const painLevel = watch('painLevel');
 
+  const handleScreeningSubmit = (values: AiEyeFormValues) => {
+    const rewardUser = () => {
+      const result = completeMission(userId, 'ai-screening');
+
+      if (!result.success && result.message === 'Misi ini sudah selesai.') {
+        addPoints(userId, 'ai_screening_completed', POINT_RULES.ai_screening_completed, 'AI Screening Mata tambahan');
+        setDailyWinsMessage('Screening tersimpan. +15 poin AI Screening ditambahkan.');
+        return;
+      }
+
+      setDailyWinsMessage(result.message);
+    };
+
+    mutation.mutate(values, {
+      onSuccess: rewardUser,
+      onError: rewardUser,
+    });
+  };
+
   return (
     <div className="space-y-4">
-      <form className="space-y-4 rounded-3xl border border-cyan-100 bg-white p-5 shadow-lg shadow-sky-100" onSubmit={handleSubmit((values) => mutation.mutate(values))}>
+      <form className="space-y-4 rounded-3xl border border-cyan-100 bg-white p-5 shadow-lg shadow-sky-100" onSubmit={handleSubmit(handleScreeningSubmit)}>
         <div>
           <h2 className="text-lg font-semibold text-slate-800">AI Screening Mata</h2>
           <p className="text-sm text-slate-500">Isi keluhan Anda untuk mendapatkan screening awal.</p>
@@ -89,6 +113,12 @@ export function AiEyeScreeningForm() {
         <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-600 p-3.5 font-semibold text-white shadow-md shadow-cyan-200 transition hover:bg-cyan-700">
           Kirim Screening <ArrowRight size={16} />
         </button>
+
+        {dailyWinsMessage && (
+          <p className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+            <CheckCircle2 size={14} /> {dailyWinsMessage}
+          </p>
+        )}
       </form>
 
       <section className="space-y-3 rounded-3xl border border-sky-100 bg-white p-5 shadow-sm shadow-sky-100">
@@ -98,7 +128,16 @@ export function AiEyeScreeningForm() {
         </div>
         <p className="text-sm leading-relaxed text-slate-600">Gejala yang Anda masukkan mengarah pada iritasi atau infeksi ringan. Disarankan melakukan pemeriksaan lebih lanjut.</p>
         <div className="flex gap-2">
-          <button className="flex-1 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-semibold text-white">Booking Pemeriksaan</button>
+          <button
+            type="button"
+            onClick={() => {
+              addPoints(userId, 'booking_created', POINT_RULES.booking_created, 'Booking pemeriksaan dari hasil AI Mata');
+              setDailyWinsMessage('Booking dicatat. +25 poin Daily Wins ditambahkan.');
+            }}
+            className="flex-1 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-semibold text-white"
+          >
+            Booking Pemeriksaan
+          </button>
           <button className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600">
             <Save size={14} /> Simpan Hasil
           </button>
