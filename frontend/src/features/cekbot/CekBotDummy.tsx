@@ -82,6 +82,7 @@ export function CekBotDummy() {
   };
 
   const activeIntegrationCount = lastResponse?.integrations.filter((integration) => integration.active).length ?? 0;
+  const isApiResponse = lastResponse?.source === 'api';
 
   return (
     <section className="space-y-3 rounded-3xl border border-cyan-100 bg-white p-5 shadow-lg shadow-cyan-50">
@@ -91,8 +92,8 @@ export function CekBotDummy() {
           <p className="text-sm text-slate-500">Tanyakan layanan, jadwal, biaya, atau informasi kesehatan mata.</p>
         </div>
         <span className="inline-flex items-center gap-1 rounded-full bg-cyan-50 px-2.5 py-1 text-[11px] font-semibold text-cyan-700">
-          {activeIntegrationCount > 0 ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
-          API {activeIntegrationCount > 0 ? 'aktif' : 'siap'}
+          {isApiResponse || activeIntegrationCount > 0 ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
+          {isApiResponse ? 'API aktif' : 'Mode lokal'}
         </span>
       </div>
 
@@ -125,6 +126,7 @@ export function CekBotDummy() {
             onClick={() => void handleSend(item)}
             className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 transition hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isSending}
+            aria-label={`Tanyakan: ${item}`}
           >
             {item}
           </button>
@@ -141,6 +143,7 @@ export function CekBotDummy() {
           placeholder="Ketik pertanyaan Anda..."
         />
         <button type="submit" disabled={isSending} className="rounded-xl bg-cyan-600 p-2 text-white transition disabled:cursor-not-allowed disabled:bg-slate-300">
+          <span className="sr-only">Kirim pertanyaan ke CekBot</span>
           <SendHorizontal size={16} />
         </button>
       </form>

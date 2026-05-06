@@ -87,28 +87,36 @@ export class CekBotService {
     };
   }
 
-  private detectTopic(message: string): 'booking' | 'price' | 'schedule' | 'bpjs' | 'location' | 'symptom' | 'general' {
-    if (['booking', 'reservasi', 'daftar', 'janji'].some((keyword) => message.includes(keyword))) {
+  private detectTopic(message: string): 'booking' | 'price' | 'schedule' | 'bpjs' | 'location' | 'symptom' | 'operationalHours' | 'general' {
+    if (['keluhan', 'gejala', 'merah', 'gatal', 'buram', 'kabur', 'nyeri', 'perih', 'bengkak'].some((keyword) => message.includes(keyword))) {
+      return 'symptom';
+    }
+
+    if (['booking', 'reservasi', 'daftar', 'janji', 'pesan'].some((keyword) => message.includes(keyword))) {
       return 'booking';
     }
 
-    if (['biaya', 'harga', 'tarif'].some((keyword) => message.includes(keyword))) {
+    if (['biaya', 'harga', 'tarif', 'bayar'].some((keyword) => message.includes(keyword))) {
       return 'price';
-    }
-
-    if (['jadwal', 'dokter', 'jam'].some((keyword) => message.includes(keyword))) {
-      return 'schedule';
     }
 
     if (message.includes('bpjs')) {
       return 'bpjs';
     }
 
+    if (['jam operasional', 'jam buka', 'jam tutup', 'operasional', 'buka jam', 'tutup jam'].some((keyword) => message.includes(keyword))) {
+      return 'operationalHours';
+    }
+
+    if (['jadwal', 'dokter', 'praktek', 'praktik', 'hari ini'].some((keyword) => message.includes(keyword))) {
+      return 'schedule';
+    }
+
     if (['lokasi', 'alamat', 'rute', 'maps'].some((keyword) => message.includes(keyword))) {
       return 'location';
     }
 
-    if (['mata', 'keluhan', 'merah', 'gatal', 'buram', 'kabur', 'nyeri'].some((keyword) => message.includes(keyword))) {
+    if (message.includes('mata')) {
       return 'symptom';
     }
 
@@ -125,13 +133,14 @@ export class CekBotService {
       : ' Integrasi eksternal belum aktif karena environment variable belum tersedia di server.';
 
     const replies = {
-      booking: 'Bisa, saya bantu proses booking. Pilih tanggal kunjungan, dokter tujuan, dan nomor kontak yang dapat dihubungi.',
-      price: 'Untuk biaya pemeriksaan, petugas klinik dapat mengonfirmasi paket yang sesuai setelah mengetahui jenis pemeriksaan yang Anda butuhkan.',
-      schedule: 'Jadwal dokter dapat dicek melalui petugas klinik. Sebutkan hari yang diinginkan agar saya bantu arahkan ke slot yang tersedia.',
-      bpjs: 'Layanan BPJS perlu diverifikasi berdasarkan poli, rujukan, dan kuota. Siapkan nomor kartu serta surat rujukan bila ada.',
+      booking: 'Bisa, saya bantu booking pemeriksaan. Silakan siapkan nama pasien, nomor WhatsApp aktif, tanggal kunjungan, dan pilihan dokter/jam. Setelah itu admin dapat mengonfirmasi slot yang tersedia.',
+      price: 'Estimasi biaya pemeriksaan mata dasar mulai dari Rp150.000. Biaya dapat berbeda untuk pemeriksaan lanjutan seperti refraksi, retina, tekanan bola mata, atau tindakan dokter. Admin akan mengonfirmasi paket yang paling sesuai.',
+      schedule: 'Jadwal dokter hari ini tersedia pada pukul 09.00-12.00 dan 15.00-18.00. Untuk memastikan slot, pilih “Booking slot terdekat” atau kirim preferensi jam kunjungan Anda.',
+      bpjs: 'Klinik dapat membantu pengecekan layanan BPJS sesuai poli, rujukan, dan kuota harian. Siapkan nomor kartu BPJS, NIK, dan surat rujukan bila ada agar admin bisa verifikasi.',
       location: 'Saya bisa membantu informasi lokasi klinik dan rute. Jika Mapbox aktif, aplikasi dapat menampilkan bantuan peta.',
-      symptom: 'Ceritakan keluhan mata Anda: sejak kapan, mata kanan/kiri, ada nyeri, merah, buram, atau riwayat cedera?',
-      general: 'Halo, saya CekBot. Saya bisa bantu info layanan, booking, jadwal dokter, biaya, lokasi, dan keluhan mata awal.',
+      symptom: 'Untuk keluhan mata, sebaiknya periksa ke dokter bila nyeri berat, penglihatan tiba-tiba buram/hilang, mata merah disertai sakit, cedera, keluar cairan kental, atau keluhan tidak membaik dalam 1-2 hari. Ceritakan gejala, sejak kapan, dan mata kanan/kiri agar saya bantu arahkan.',
+      operationalHours: 'Jam operasional klinik: Senin-Sabtu pukul 08.00-20.00, Minggu pukul 09.00-14.00. Jadwal dokter bisa berbeda, jadi booking lebih dulu disarankan.',
+      general: 'Halo, saya CekBot. Saya bisa bantu info layanan, booking, jadwal dokter, biaya, BPJS, jam operasional, lokasi, dan skrining awal keluhan mata.',
     } satisfies Record<typeof topic, string>;
 
     return `${replies[topic]}${channelNote}`;
@@ -149,6 +158,7 @@ export class CekBotService {
       bpjs: ['Cek syarat BPJS', 'Upload rujukan', 'Hubungi admin'],
       location: ['Buka peta klinik', 'Minta rute', 'Bagikan lokasi saya'],
       symptom: ['Mulai skrining AI Mata', 'Booking pemeriksaan', 'Konsultasi admin'],
+      operationalHours: ['Lihat jadwal dokter', 'Booking slot terdekat', 'Hubungi admin'],
       general: ['Booking pemeriksaan', 'Tanya biaya', 'Cek jadwal dokter'],
     } satisfies Record<ReturnType<CekBotService['detectTopic']>, string[]>;
 
