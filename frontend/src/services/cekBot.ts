@@ -127,7 +127,7 @@ function buildReply(topic: CekBotTopic, urgency: { urgent: boolean }, channelNot
     symptom:
       'Untuk keluhan mata, sebaiknya periksa ke dokter bila nyeri berat, penglihatan tiba-tiba buram/hilang, mata merah disertai sakit, cedera, keluar cairan kental, atau keluhan tidak membaik dalam 1-2 hari. Ceritakan gejala, sejak kapan, dan mata kanan/kiri agar saya bantu arahkan.',
     operationalHours: 'Jam operasional klinik: Senin-Sabtu pukul 08.00-20.00, Minggu pukul 09.00-14.00. Jadwal dokter bisa berbeda, jadi booking lebih dulu disarankan.',
-    general: 'Halo, saya CekBot. Saya bisa bantu info layanan, booking, jadwal dokter, biaya, BPJS, jam operasional, lokasi, dan skrining awal keluhan mata.',
+    general: 'Halo, saya CekBot Prime Apps. Saya bisa bantu info layanan, booking, jadwal dokter, biaya, BPJS, jam operasional, lokasi, dan skrining awal keluhan mata.',
   } satisfies Record<CekBotTopic, string>;
 
   return `${replies[topic]}${channelNote}`;

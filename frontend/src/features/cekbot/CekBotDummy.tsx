@@ -21,7 +21,7 @@ const initialMessages: ChatMessage[] = [
   {
     id: 'welcome',
     from: 'bot',
-    text: 'Halo, saya CekBot 👋 Ada yang bisa saya bantu?',
+    text: 'Halo, saya CekBot Prime Apps 👋 Ada yang bisa saya bantu?',
   },
 ];
 
@@ -89,7 +89,7 @@ export function CekBotDummy() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-slate-800">CekBot</h2>
-          <p className="text-sm text-slate-500">Tanyakan layanan, jadwal, biaya, atau informasi kesehatan mata.</p>
+          <p className="text-sm text-slate-500">Tanyakan layanan Prime Apps, jadwal, biaya, atau informasi kesehatan mata.</p>
         </div>
         <span className="inline-flex items-center gap-1 rounded-full bg-cyan-50 px-2.5 py-1 text-[11px] font-semibold text-cyan-700">
           {isApiResponse || activeIntegrationCount > 0 ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
