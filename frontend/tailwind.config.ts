@@ -5,7 +5,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#0ea5e9',
+        primary: '#B19731',
+        'prime-gold': '#B19731',
+        'prime-black': '#231F20',
+        'prime-cream': '#FFE7AB',
       },
     },
   },
