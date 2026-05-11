@@ -251,29 +251,29 @@ export function MarketplacePage() {
   };
 
   return (
-    <section className="space-y-4 pb-3">
+    <section className="space-y-6">
       <header className="flex items-start justify-between rounded-3xl bg-white px-1 pb-1 pt-2">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+          <h1 className="text-3xl font-semibold tracking-tight text-prime-black">
             Marketplace
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-prime-black/60">
             Fokus belanja kebutuhan mata dengan gambar produk jelas
           </p>
         </div>
-        <button className="relative rounded-2xl border border-cyan-100 bg-cyan-50 p-2.5 text-cyan-700 shadow-sm">
+        <button className="relative rounded-2xl border border-prime-gold/20 bg-prime-cream/50 p-2.5 text-prime-gold shadow-sm">
           <Bell className="h-5 w-5" />
           <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500" />
         </button>
       </header>
 
       <div className="flex gap-2">
-        <label className="flex flex-1 items-center gap-2 rounded-2xl border border-cyan-100 bg-white px-3 py-3 shadow-sm shadow-cyan-50">
-          <Search className="h-4 w-4 text-slate-400" />
+        <label className="flex flex-1 items-center gap-2 rounded-2xl border border-prime-gold/20 bg-white px-3 py-3 shadow-sm shadow-prime-gold/10">
+          <Search className="h-4 w-4 text-prime-black/40" />
           <input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+            className="w-full bg-transparent text-sm text-prime-black/75 outline-none placeholder:text-prime-black/40"
             placeholder="Cari produk atau layanan mata"
           />
         </label>
@@ -284,7 +284,7 @@ export function MarketplacePage() {
               category === 'Semua' ? 'Paket Klinik' : 'Semua',
             )
           }
-          className="rounded-2xl border border-cyan-100 bg-white px-3 text-cyan-700 shadow-sm shadow-cyan-50"
+          className="rounded-2xl border border-prime-gold/20 bg-white px-3 text-prime-gold shadow-sm shadow-prime-gold/10"
           aria-label="Toggle filter layanan klinik"
         >
           <Filter className="h-4 w-4" />
@@ -292,20 +292,20 @@ export function MarketplacePage() {
       </div>
 
       {feedback && (
-        <p className="rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+        <p className="rounded-2xl bg-prime-cream/60 px-3 py-2 text-xs font-semibold text-prime-gold">
           {feedback}
         </p>
       )}
 
-      <article className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-500 via-cyan-600 to-blue-600 p-5 text-white shadow-lg shadow-cyan-200">
+      <article className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-prime-black via-prime-gold to-[#d7bd64] p-5 text-white shadow-lg shadow-prime-gold/20">
         <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/20 blur-sm" />
-        <div className="absolute -bottom-10 left-8 h-24 w-24 rounded-full bg-blue-300/40 blur-sm" />
+        <div className="absolute -bottom-10 left-8 h-24 w-24 rounded-full bg-prime-cream/60 blur-sm" />
         <div className="relative grid gap-4 sm:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-3">
             <h2 className="max-w-[260px] text-lg font-semibold leading-snug">
               Etalase fokus kebutuhan mata Prime
             </h2>
-            <p className="text-sm leading-relaxed text-cyan-50">
+            <p className="text-sm leading-relaxed text-white/90">
               Produk terpercaya dan layanan profesional untuk kesehatan mata
               Anda.
             </p>
@@ -322,11 +322,11 @@ export function MarketplacePage() {
               )}
             </div>
           </div>
-          <div className="rounded-3xl bg-white/18 p-2 backdrop-blur-sm">
+          <div className="rounded-3xl bg-white/20 p-2 backdrop-blur-sm">
             <img
               src={clinicCheckupImage}
               alt="Ilustrasi produk dan layanan pemeriksaan mata Prime"
-              className="h-36 w-full rounded-2xl object-cover shadow-lg shadow-blue-900/10"
+              className="h-36 w-full rounded-2xl object-cover shadow-lg shadow-prime-gold/10"
             />
           </div>
         </div>
@@ -334,10 +334,10 @@ export function MarketplacePage() {
 
       <section>
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-900">
+          <h3 className="text-sm font-semibold text-prime-black">
             Kategori Cepat
           </h3>
-          <p className="text-xs text-cyan-700">Pilih sesuai kebutuhan 👁️</p>
+          <p className="text-xs text-prime-gold">Pilih sesuai kebutuhan 👁️</p>
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
           {[
@@ -348,10 +348,10 @@ export function MarketplacePage() {
               key={name}
               type="button"
               onClick={() => setSelectedCategory(name)}
-              className={`min-w-[112px] overflow-hidden rounded-2xl border text-center shadow-sm shadow-cyan-50 ${
+              className={`min-w-[112px] overflow-hidden rounded-2xl border text-center shadow-sm shadow-prime-gold/10 ${
                 selectedCategory === name
-                  ? 'border-cyan-500 bg-cyan-600 text-white'
-                  : 'border-cyan-100 bg-white text-slate-700'
+                  ? 'border-prime-gold bg-prime-gold text-white'
+                  : 'border-prime-gold/20 bg-white text-prime-black/75'
               }`}
             >
               <img
@@ -364,13 +364,13 @@ export function MarketplacePage() {
                   className={`mx-auto flex h-8 w-8 items-center justify-center rounded-xl ${
                     selectedCategory === name
                       ? 'bg-white/20 text-white'
-                      : 'bg-cyan-50 text-cyan-700'
+                      : 'bg-prime-cream/50 text-prime-gold'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
                 </span>
                 <p
-                  className={`mt-1.5 text-xs font-medium ${selectedCategory === name ? 'text-white' : 'text-slate-600'}`}
+                  className={`mt-1.5 text-xs font-medium ${selectedCategory === name ? 'text-white' : 'text-prime-black/70'}`}
                 >
                   {name}
                 </p>
@@ -382,10 +382,10 @@ export function MarketplacePage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-slate-900">
+          <h3 className="text-base font-semibold text-prime-black">
             Produk Pilihan
           </h3>
-          <button className="text-xs font-medium text-cyan-700">
+          <button className="text-xs font-medium text-prime-gold">
             Lihat semua
           </button>
         </div>
@@ -394,7 +394,7 @@ export function MarketplacePage() {
             ({ name, desc, price, priceValue, icon: Icon, image, badge }) => (
               <article
                 key={name}
-                className="overflow-hidden rounded-3xl border border-cyan-100 bg-white shadow-sm shadow-cyan-50"
+                className="overflow-hidden rounded-3xl border border-prime-gold/20 bg-white shadow-sm shadow-prime-gold/10"
               >
                 <div className="relative">
                   <img
@@ -402,29 +402,29 @@ export function MarketplacePage() {
                     alt={`Foto produk ${name}`}
                     className="h-32 w-full object-cover"
                   />
-                  <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold text-cyan-700 shadow-sm">
+                  <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold text-prime-gold shadow-sm">
                     {badge}
                   </span>
-                  <button className="absolute right-3 top-3 rounded-full bg-white/90 p-1.5 text-slate-400 shadow-sm">
+                  <button className="absolute right-3 top-3 rounded-full bg-white/90 p-1.5 text-prime-black/40 shadow-sm">
                     <Heart className="h-4 w-4" />
                   </button>
-                  <span className="absolute bottom-3 left-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 text-cyan-700 shadow-sm">
+                  <span className="absolute bottom-3 left-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 text-prime-gold shadow-sm">
                     <Icon className="h-4 w-4" />
                   </span>
                 </div>
                 <div className="p-3">
-                  <p className="text-sm font-semibold leading-snug text-slate-900">
+                  <p className="text-sm font-semibold leading-snug text-prime-black">
                     {name}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">{desc}</p>
+                  <p className="mt-1 text-xs text-prime-black/60">{desc}</p>
                   <div className="mt-3 flex items-center justify-between">
-                    <p className="text-sm font-semibold text-cyan-700">
+                    <p className="text-sm font-semibold text-prime-gold">
                       {price}
                     </p>
                     <button
                       type="button"
                       onClick={() => addToCart({ name, price, priceValue })}
-                      className="rounded-xl bg-cyan-600 p-2 text-white shadow-sm shadow-cyan-200"
+                      className="rounded-xl bg-prime-gold p-2 text-white shadow-sm shadow-prime-gold/20"
                       aria-label={`Beli ${name}`}
                     >
                       <Plus className="h-4 w-4" />
@@ -436,21 +436,21 @@ export function MarketplacePage() {
           )}
         </div>
         {!filteredProducts.length && (
-          <p className="rounded-2xl border border-dashed border-cyan-200 bg-white px-3 py-4 text-center text-sm text-slate-500">
+          <p className="rounded-2xl border border-dashed border-prime-gold/25 bg-white px-3 py-4 text-center text-sm text-prime-black/60">
             Produk tidak ditemukan. Coba kata kunci atau kategori lain.
           </p>
         )}
       </section>
 
       <section className="space-y-3">
-        <h3 className="text-base font-semibold text-slate-900">
+        <h3 className="text-base font-semibold text-prime-black">
           Layanan Klinik
         </h3>
         <div className="space-y-2">
           {filteredServices.map(({ title, desc, price, badge, image }) => (
             <article
               key={title}
-              className="rounded-2xl border border-cyan-100 bg-white p-3 shadow-sm shadow-cyan-50"
+              className="rounded-2xl border border-prime-gold/20 bg-white p-3 shadow-sm shadow-prime-gold/10"
             >
               <div className="flex items-start gap-3">
                 <img
@@ -459,46 +459,46 @@ export function MarketplacePage() {
                   className="h-20 w-20 flex-none rounded-2xl object-cover"
                 />
                 <div className="min-w-0 flex-1">
-                  <span className="rounded-full bg-cyan-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-cyan-700">
+                  <span className="rounded-full bg-prime-cream/50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-prime-gold">
                     {badge}
                   </span>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">
+                  <p className="mt-2 text-sm font-semibold text-prime-black">
                     {title}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">{desc}</p>
+                  <p className="mt-1 text-xs text-prime-black/60">{desc}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => rewardBooking(title)}
-                  className="rounded-xl bg-cyan-600 px-3 py-2 text-xs font-medium text-white"
+                  className="rounded-xl bg-prime-gold px-3 py-2 text-xs font-medium text-white"
                 >
                   Booking
                 </button>
               </div>
-              <p className="mt-2 text-sm font-semibold text-cyan-700">
+              <p className="mt-2 text-sm font-semibold text-prime-gold">
                 {price}
               </p>
             </article>
           ))}
         </div>
         {!filteredServices.length && (
-          <p className="rounded-2xl border border-dashed border-cyan-200 bg-white px-3 py-4 text-center text-sm text-slate-500">
+          <p className="rounded-2xl border border-dashed border-prime-gold/25 bg-white px-3 py-4 text-center text-sm text-prime-black/60">
             Layanan tidak ditemukan untuk filter saat ini.
           </p>
         )}
       </section>
 
-      <section className="rounded-3xl border border-cyan-100 bg-white p-4 shadow-sm shadow-cyan-50">
+      <section className="rounded-3xl border border-prime-gold/20 bg-white p-4 shadow-sm shadow-prime-gold/10">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">
+            <p className="text-xs font-semibold uppercase tracking-wide text-prime-gold">
               Keranjang
             </p>
-            <h3 className="text-base font-semibold text-slate-900">
+            <h3 className="text-base font-semibold text-prime-black">
               {cartQuantity} item dipilih
             </h3>
           </div>
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-prime-cream/50 text-prime-gold">
             <ShoppingCart className="h-5 w-5" />
           </span>
         </div>
@@ -507,13 +507,13 @@ export function MarketplacePage() {
             cartItems.map((item) => (
               <div
                 key={item.name}
-                className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2"
+                className="flex items-center justify-between gap-3 rounded-2xl bg-[#fff8e8] px-3 py-2"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-800">
+                  <p className="truncate text-sm font-semibold text-prime-black">
                     {item.name}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-prime-black/60">
                     {item.price} × {item.quantity}
                   </p>
                 </div>
@@ -521,7 +521,7 @@ export function MarketplacePage() {
                   <button
                     type="button"
                     onClick={() => decreaseCartItem(item.name)}
-                    className="rounded-lg bg-white p-1.5 text-cyan-700"
+                    className="rounded-lg bg-white p-1.5 text-prime-gold"
                     aria-label={`Kurangi ${item.name}`}
                   >
                     <Minus className="h-3.5 w-3.5" />
@@ -529,7 +529,7 @@ export function MarketplacePage() {
                   <button
                     type="button"
                     onClick={() => addToCart(item)}
-                    className="rounded-lg bg-white p-1.5 text-cyan-700"
+                    className="rounded-lg bg-white p-1.5 text-prime-gold"
                     aria-label={`Tambah ${item.name}`}
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -546,29 +546,29 @@ export function MarketplacePage() {
               </div>
             ))
           ) : (
-            <p className="rounded-2xl bg-slate-50 px-3 py-4 text-center text-sm text-slate-500">
+            <p className="rounded-2xl bg-[#fff8e8] px-3 py-4 text-center text-sm text-prime-black/60">
               Belum ada item di keranjang.
             </p>
           )}
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+        <div className="mt-3 flex items-center justify-between border-t border-prime-gold/10 pt-3">
           <div>
-            <p className="text-xs text-slate-500">Total estimasi</p>
-            <p className="text-lg font-semibold text-slate-900">
+            <p className="text-xs text-prime-black/60">Total estimasi</p>
+            <p className="text-lg font-semibold text-prime-black">
               {formatRupiah(cartTotal)}
             </p>
           </div>
           <button
             type="button"
             onClick={checkoutCart}
-            className="inline-flex items-center gap-2 rounded-2xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-cyan-200"
+            className="inline-flex items-center gap-2 rounded-2xl bg-prime-gold px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-prime-gold/20"
           >
             <CheckCircle2 className="h-4 w-4" /> Checkout
           </button>
         </div>
       </section>
 
-      <article className="rounded-3xl bg-gradient-to-r from-blue-600 via-cyan-600 to-cyan-500 p-4 text-white shadow-lg shadow-cyan-200">
+      <article className="rounded-3xl bg-gradient-to-r from-prime-black via-prime-gold to-[#d7bd64] p-4 text-white shadow-lg shadow-prime-gold/20">
         <div className="flex items-center gap-3">
           <img
             src={contactLensImage}
@@ -576,7 +576,7 @@ export function MarketplacePage() {
             className="h-20 w-24 rounded-2xl object-cover"
           />
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+            <p className="text-xs font-semibold uppercase tracking-wide text-white/80">
               Promo Hari Ini
             </p>
             <p className="mt-1 text-lg font-semibold">
@@ -584,25 +584,25 @@ export function MarketplacePage() {
             </p>
           </div>
         </div>
-        <button className="mt-3 rounded-xl bg-white px-3 py-2 text-sm font-medium text-cyan-700">
+        <button className="mt-3 rounded-xl bg-white px-3 py-2 text-sm font-medium text-prime-gold">
           Lihat Promo
         </button>
       </article>
 
       <section>
-        <h3 className="text-sm font-semibold text-slate-900">
+        <h3 className="text-sm font-semibold text-prime-black">
           Kenapa pilih Marketplace Prime?
         </h3>
         <div className="mt-2 grid grid-cols-3 gap-2">
           {trustCards.map(({ title, icon: Icon }) => (
             <article
               key={title}
-              className="rounded-2xl border border-cyan-100 bg-white p-2.5 text-center shadow-sm shadow-cyan-50"
+              className="rounded-2xl border border-prime-gold/20 bg-white p-2.5 text-center shadow-sm shadow-prime-gold/10"
             >
-              <span className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-50 text-cyan-700">
+              <span className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-prime-cream/50 text-prime-gold">
                 <Icon className="h-4 w-4" />
               </span>
-              <p className="mt-1.5 text-[11px] font-medium leading-snug text-slate-600">
+              <p className="mt-1.5 text-[11px] font-medium leading-snug text-prime-black/70">
                 {title}
               </p>
             </article>
@@ -612,7 +612,7 @@ export function MarketplacePage() {
 
       <RewardSection />
 
-      <p className="text-center text-xs text-slate-400">
+      <p className="text-center text-xs text-prime-black/40">
         Butuh bantuan memilih? Tim Klinik Utama Prime siap membantu Anda 🤍
       </p>
     </section>

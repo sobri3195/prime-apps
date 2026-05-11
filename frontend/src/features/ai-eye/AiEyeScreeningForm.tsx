@@ -266,34 +266,34 @@ export function AiEyeScreeningForm() {
   };
 
   return (
-    <div className="space-y-4">
-      <form className="space-y-4 rounded-3xl border border-cyan-100 bg-white p-5 shadow-lg shadow-sky-100" onSubmit={handleSubmit(handleScreeningSubmit)}>
+    <div className="space-y-5">
+      <form className="space-y-4 rounded-3xl border border-prime-gold/20 bg-white p-5 shadow-lg shadow-prime-gold/10" onSubmit={handleSubmit(handleScreeningSubmit)}>
         <div>
-          <h2 className="text-lg font-semibold text-slate-800">AI Screening Mata</h2>
-          <p className="text-sm text-slate-500">Isi keluhan Anda untuk mendapatkan screening awal.</p>
+          <h2 className="text-lg font-semibold text-prime-black">AI Screening Mata</h2>
+          <p className="text-sm text-prime-black/60">Isi keluhan Anda untuk mendapatkan screening awal.</p>
         </div>
 
         <div className="space-y-3">
           <div>
             <input
               {...register('chiefComplaint')}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none ring-cyan-200 transition focus:ring"
+              className="w-full rounded-2xl border border-prime-gold/20 bg-[#fff8e8] px-4 py-3 text-sm outline-none ring-prime-gold/20 transition focus:ring"
               placeholder="Contoh: mata merah, buram, atau nyeri"
             />
-            {errors.chiefComplaint && <p className="mt-1 text-xs text-amber-700">Keluhan utama wajib diisi.</p>}
+            {errors.chiefComplaint && <p className="mt-1 text-xs text-prime-gold">Keluhan utama wajib diisi.</p>}
           </div>
           <div>
             <input
               {...register('duration')}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none ring-cyan-200 transition focus:ring"
+              className="w-full rounded-2xl border border-prime-gold/20 bg-[#fff8e8] px-4 py-3 text-sm outline-none ring-prime-gold/20 transition focus:ring"
               placeholder="Contoh: 2 hari, 1 minggu"
             />
-            {errors.duration && <p className="mt-1 text-xs text-amber-700">Durasi keluhan wajib diisi.</p>}
+            {errors.duration && <p className="mt-1 text-xs text-prime-gold">Durasi keluhan wajib diisi.</p>}
           </div>
         </div>
 
         <div className="space-y-2">
-          <p className="text-sm font-medium text-slate-700">Gejala tambahan</p>
+          <p className="text-sm font-medium text-prime-black/75">Gejala tambahan</p>
           <div className="flex flex-wrap gap-2">
             {symptomOptions.map((symptom) => {
               const normalizedSymptom = symptom.toLowerCase();
@@ -310,7 +310,7 @@ export function AiEyeScreeningForm() {
                     )
                   }
                   className={`rounded-full border px-3 py-2 text-xs font-medium transition ${
-                    active ? 'border-cyan-500 bg-cyan-50 text-cyan-700' : 'border-slate-200 bg-white text-slate-600'
+                    active ? 'border-prime-gold bg-prime-cream/50 text-prime-gold' : 'border-prime-gold/20 bg-white text-prime-black/70'
                   }`}
                 >
                   {symptom}
@@ -318,26 +318,26 @@ export function AiEyeScreeningForm() {
               );
             })}
           </div>
-          {errors.symptoms && <p className="text-xs text-amber-700">Pilih minimal satu gejala tambahan.</p>}
+          {errors.symptoms && <p className="text-xs text-prime-gold">Pilih minimal satu gejala tambahan.</p>}
         </div>
 
         <div className="space-y-2">
-          <p className="text-sm font-medium text-slate-700">Tingkat keluhan</p>
-          <input type="range" min={0} max={10} value={painLevel} onChange={(e) => setValue('painLevel', Number(e.target.value))} className="h-2 w-full cursor-pointer appearance-none rounded-full bg-cyan-100 accent-cyan-600" />
-          <div className="flex items-center justify-between text-xs text-slate-500">
+          <p className="text-sm font-medium text-prime-black/75">Tingkat keluhan</p>
+          <input type="range" min={0} max={10} value={painLevel} onChange={(e) => setValue('painLevel', Number(e.target.value))} className="h-2 w-full cursor-pointer appearance-none rounded-full bg-prime-cream/70 accent-prime-gold" />
+          <div className="flex items-center justify-between text-xs text-prime-black/60">
             <span>Ringan</span>
-            <span className="rounded-full bg-cyan-50 px-2 py-0.5 font-semibold text-cyan-700">{painLevel}/10</span>
+            <span className="rounded-full bg-prime-cream/50 px-2 py-0.5 font-semibold text-prime-gold">{painLevel}/10</span>
             <span>Sedang</span>
             <span>Berat</span>
           </div>
         </div>
 
-        <div className="space-y-3 rounded-3xl border border-cyan-100 bg-cyan-50/40 p-4">
+        <div className="space-y-3 rounded-3xl border border-prime-gold/20 bg-prime-cream/40 p-4">
           <div className="flex items-start gap-2">
-            <Eye className="mt-0.5 text-cyan-600" size={18} />
+            <Eye className="mt-0.5 text-prime-gold" size={18} />
             <div>
-              <p className="text-sm font-semibold text-slate-800">Ambil Foto Mata (Opsional)</p>
-              <p className="text-xs text-slate-500">Tambahkan foto mata jika ingin screening lebih lengkap.</p>
+              <p className="text-sm font-semibold text-prime-black">Ambil Foto Mata (Opsional)</p>
+              <p className="text-xs text-prime-black/60">Tambahkan foto mata jika ingin screening lebih lengkap.</p>
             </div>
           </div>
 
@@ -345,65 +345,65 @@ export function AiEyeScreeningForm() {
             <button
               type="button"
               onClick={openCamera}
-              className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-cyan-400 bg-white px-4 py-4 text-left transition hover:bg-cyan-50"
+              className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-prime-gold/50 bg-white px-4 py-4 text-left transition hover:bg-prime-cream/50"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-700">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-prime-cream/70 text-prime-gold">
                 <Camera size={22} />
               </span>
               <span>
-                <span className="block text-sm font-semibold text-cyan-800">Ambil Foto Mata</span>
-                <span className="block text-xs text-slate-500">Opsional untuk membantu screening awal</span>
+                <span className="block text-sm font-semibold text-prime-black">Ambil Foto Mata</span>
+                <span className="block text-xs text-prime-black/60">Opsional untuk membantu screening awal</span>
               </span>
             </button>
           ) : (
-            <div className="rounded-2xl border border-cyan-100 bg-white p-3">
+            <div className="rounded-2xl border border-prime-gold/20 bg-white p-3">
               <div className="flex gap-3">
-                <img src={photoPreviewUri} alt="Preview foto mata" className="h-24 w-24 rounded-2xl object-cover ring-1 ring-cyan-100" />
+                <img src={photoPreviewUri} alt="Preview foto mata" className="h-24 w-24 rounded-2xl object-cover ring-1 ring-prime-gold/20" />
                 <div className="flex-1 space-y-2">
-                  <p className="flex items-center gap-1 text-sm font-semibold text-emerald-700">
+                  <p className="flex items-center gap-1 text-sm font-semibold text-prime-gold">
                     <CheckCircle2 size={15} /> Foto mata berhasil ditambahkan.
                   </p>
-                  <p className="text-xs text-slate-500">{capturedEyePhoto.mimeType?.toUpperCase()} • {formatPhotoSize(capturedEyePhoto.fileSize)}</p>
+                  <p className="text-xs text-prime-black/60">{capturedEyePhoto.mimeType?.toUpperCase()} • {formatPhotoSize(capturedEyePhoto.fileSize)}</p>
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={confirmPhoto} className="rounded-full bg-cyan-600 px-3 py-1.5 text-xs font-semibold text-white">
+                    <button type="button" onClick={confirmPhoto} className="rounded-full bg-prime-gold px-3 py-1.5 text-xs font-semibold text-white">
                       Gunakan Foto
                     </button>
-                    <button type="button" onClick={retakePhoto} className="rounded-full border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700">
+                    <button type="button" onClick={retakePhoto} className="rounded-full border border-prime-gold/25 px-3 py-1.5 text-xs font-semibold text-prime-gold">
                       Ambil Ulang
                     </button>
-                    <button type="button" onClick={removePhoto} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                    <button type="button" onClick={removePhoto} className="rounded-full border border-prime-gold/20 px-3 py-1.5 text-xs font-semibold text-prime-black/70">
                       Hapus Foto
                     </button>
                   </div>
-                  {isPhotoConfirmed && <p className="text-xs font-medium text-cyan-700">Foto siap membantu screening awal.</p>}
+                  {isPhotoConfirmed && <p className="text-xs font-medium text-prime-gold">Foto siap membantu screening awal.</p>}
                 </div>
               </div>
             </div>
           )}
 
-          {isPhotoValidating && <p className="text-xs font-medium text-cyan-700">Memvalidasi foto mata...</p>}
-          {photoWarning && <p className="rounded-2xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">{photoWarning}</p>}
+          {isPhotoValidating && <p className="text-xs font-medium text-prime-gold">Memvalidasi foto mata...</p>}
+          {photoWarning && <p className="rounded-2xl bg-prime-cream/50 px-3 py-2 text-xs font-medium text-prime-gold">{photoWarning}</p>}
         </div>
 
-        <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-600 p-3.5 font-semibold text-white shadow-md shadow-cyan-200 transition hover:bg-cyan-700">
+        <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-2xl bg-prime-gold p-3.5 font-semibold text-white shadow-md shadow-prime-gold/20 transition hover:bg-[#9e8629]">
           Kirim Screening <ArrowRight size={16} />
         </button>
 
         {dailyWinsMessage && (
-          <p className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+          <p className="flex items-center gap-2 rounded-2xl bg-prime-cream/60 px-3 py-2 text-xs font-semibold text-prime-gold">
             <CheckCircle2 size={14} /> {dailyWinsMessage}
           </p>
         )}
       </form>
 
       {isCameraOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-prime-black/80 p-4">
           <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div className="flex items-start justify-between gap-3 border-b border-slate-100 p-4">
+            <div className="flex items-start justify-between gap-3 border-b border-prime-gold/10 p-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">Kamera pasien</p>
-                <h3 className="text-lg font-semibold text-slate-900">Ambil Foto Mata</h3>
-                <ul className="mt-2 space-y-1 text-xs text-slate-600">
+                <p className="text-xs font-semibold uppercase tracking-wide text-prime-gold">Kamera pasien</p>
+                <h3 className="text-lg font-semibold text-prime-black">Ambil Foto Mata</h3>
+                <ul className="mt-2 space-y-1 text-xs text-prime-black/70">
                   <li>• Pastikan wajah berada di area terang</li>
                   <li>• Hindari cahaya terlalu silau</li>
                   <li>• Dekatkan kamera ke area mata</li>
@@ -411,70 +411,70 @@ export function AiEyeScreeningForm() {
                   <li>• Jangan gunakan flash jika membuat mata tidak nyaman</li>
                 </ul>
               </div>
-              <button type="button" onClick={closeCamera} className="rounded-full bg-slate-100 p-2 text-slate-600">
+              <button type="button" onClick={closeCamera} className="rounded-full bg-prime-cream/50 p-2 text-prime-black/70">
                 <X size={18} />
               </button>
             </div>
 
-            <div className="relative bg-slate-950">
+            <div className="relative bg-prime-black">
               <video ref={videoRef} className="h-[420px] w-full object-cover" playsInline muted />
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <div className="flex h-36 w-64 items-center justify-center rounded-[45%] border-2 border-cyan-300 shadow-[0_0_0_999px_rgba(15,23,42,0.38)]">
-                  <span className="rounded-full bg-slate-950/55 px-3 py-1 text-xs font-medium text-white">Posisikan mata di dalam frame</span>
+                <div className="flex h-36 w-64 items-center justify-center rounded-[45%] border-2 border-prime-gold/40 shadow-[0_0_0_999px_rgba(35,31,32,0.38)]">
+                  <span className="rounded-full bg-prime-black/60 px-3 py-1 text-xs font-medium text-white">Posisikan mata di dalam frame</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-3 p-4">
               <div className="flex items-center justify-center gap-4">
-                <button type="button" onClick={closeCamera} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
+                <button type="button" onClick={closeCamera} className="rounded-full border border-prime-gold/20 px-4 py-2 text-sm font-semibold text-prime-black/70">
                   Lanjut tanpa foto
                 </button>
-                <button type="button" onClick={capturePhoto} className="flex h-16 w-16 items-center justify-center rounded-full bg-cyan-600 text-white shadow-lg shadow-cyan-200 ring-4 ring-cyan-100" aria-label="Ambil foto mata">
+                <button type="button" onClick={capturePhoto} className="flex h-16 w-16 items-center justify-center rounded-full bg-prime-gold text-white shadow-lg shadow-prime-gold/20 ring-4 ring-prime-gold/20" aria-label="Ambil foto mata">
                   <Camera size={26} />
                 </button>
-                <button type="button" onClick={closeCamera} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
+                <button type="button" onClick={closeCamera} className="rounded-full border border-prime-gold/20 px-4 py-2 text-sm font-semibold text-prime-black/70">
                   Batal
                 </button>
               </div>
-              <p className="text-center text-xs text-slate-500">Foto opsional dan hanya membantu screening awal, bukan diagnosis final.</p>
+              <p className="text-center text-xs text-prime-black/60">Foto opsional dan hanya membantu screening awal, bukan diagnosis final.</p>
             </div>
           </div>
         </div>
       )}
       <canvas ref={canvasRef} className="hidden" />
 
-      <section className="space-y-3 rounded-3xl border border-sky-100 bg-white p-5 shadow-sm shadow-sky-100">
+      <section className="space-y-3 rounded-3xl border border-prime-gold/20 bg-white p-5 shadow-sm shadow-prime-gold/10">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-semibold text-slate-800">Hasil Screening Awal</h3>
-          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">{submittedScreening ? 'Perlu Konsultasi' : 'Menunggu Form'}</span>
+          <h3 className="font-semibold text-prime-black">Hasil Screening Awal</h3>
+          <span className="rounded-full bg-prime-cream/75 px-3 py-1 text-xs font-semibold text-prime-gold">{submittedScreening ? 'Perlu Konsultasi' : 'Menunggu Form'}</span>
         </div>
-        <p className="text-sm leading-relaxed text-slate-600">
+        <p className="text-sm leading-relaxed text-prime-black/70">
           {submittedScreening
             ? 'Gejala yang Anda masukkan mengarah pada iritasi atau infeksi ringan. Disarankan melakukan pemeriksaan lebih lanjut.'
             : 'Lengkapi form screening untuk melihat ringkasan awal keluhan mata Anda.'}
         </p>
 
         {submittedScreening && (
-          <div className="space-y-3 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+          <div className="space-y-3 rounded-2xl bg-[#fff8e8] p-4 text-sm text-prime-black/70">
             <div className="grid gap-2 sm:grid-cols-2">
-              <p><span className="font-semibold text-slate-800">Keluhan utama:</span> {submittedScreening.chiefComplaint}</p>
-              <p><span className="font-semibold text-slate-800">Durasi keluhan:</span> {submittedScreening.duration}</p>
-              <p><span className="font-semibold text-slate-800">Gejala tambahan:</span> {submittedScreening.symptoms.join(', ')}</p>
-              <p><span className="font-semibold text-slate-800">Tingkat keluhan:</span> {submittedScreening.painLevel}/10</p>
-              <p><span className="font-semibold text-slate-800">Rekomendasi:</span> Konsultasikan keluhan dengan dokter mata bila gejala menetap atau memburuk.</p>
+              <p><span className="font-semibold text-prime-black">Keluhan utama:</span> {submittedScreening.chiefComplaint}</p>
+              <p><span className="font-semibold text-prime-black">Durasi keluhan:</span> {submittedScreening.duration}</p>
+              <p><span className="font-semibold text-prime-black">Gejala tambahan:</span> {submittedScreening.symptoms.join(', ')}</p>
+              <p><span className="font-semibold text-prime-black">Tingkat keluhan:</span> {submittedScreening.painLevel}/10</p>
+              <p><span className="font-semibold text-prime-black">Rekomendasi:</span> Konsultasikan keluhan dengan dokter mata bila gejala menetap atau memburuk.</p>
             </div>
-            <div className="rounded-2xl border border-cyan-100 bg-white p-3">
+            <div className="rounded-2xl border border-prime-gold/20 bg-white p-3">
               {submittedScreening.hasEyePhoto && submittedScreening.photoPreviewUri ? (
                 <div className="flex items-center gap-3">
                   <img src={submittedScreening.photoPreviewUri} alt="Foto mata terlampir" className="h-16 w-16 rounded-2xl object-cover" />
-                  <p className="text-sm font-semibold text-cyan-700">Foto mata terlampir</p>
+                  <p className="text-sm font-semibold text-prime-gold">Foto mata terlampir</p>
                 </div>
               ) : (
-                <p className="text-sm font-semibold text-slate-600">Screening dilakukan tanpa foto mata</p>
+                <p className="text-sm font-semibold text-prime-black/70">Screening dilakukan tanpa foto mata</p>
               )}
             </div>
-            <p className="rounded-2xl bg-cyan-50 px-3 py-2 text-xs leading-relaxed text-cyan-800">
+            <p className="rounded-2xl bg-prime-cream/50 px-3 py-2 text-xs leading-relaxed text-prime-black">
               Hasil ini merupakan screening awal dan bukan diagnosis final. Konsultasikan dengan dokter mata untuk pemeriksaan lebih akurat.
             </p>
           </div>
@@ -487,24 +487,24 @@ export function AiEyeScreeningForm() {
               addPoints(userId, 'booking_created', POINT_RULES.booking_created, 'Booking pemeriksaan dari hasil AI Mata');
               setDailyWinsMessage('Booking dicatat. +25 poin Daily Wins ditambahkan.');
             }}
-            className="flex-1 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-semibold text-white"
+            className="flex-1 rounded-xl bg-prime-gold px-3 py-2 text-xs font-semibold text-white"
           >
             Booking Pemeriksaan
           </button>
-          <button className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600">
+          <button className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-prime-gold/20 px-3 py-2 text-xs font-semibold text-prime-black/70">
             <Save size={14} /> Simpan Hasil
           </button>
         </div>
       </section>
 
       <div className="grid grid-cols-2 gap-3">
-        <article className="rounded-2xl bg-white p-4 shadow-sm shadow-slate-100 ring-1 ring-slate-100">
-          <p className="text-xs font-semibold text-cyan-700">Tips Mata Sehat</p>
-          <p className="mt-1 text-sm text-slate-600">Istirahatkan mata setiap 20 menit saat menatap layar.</p>
+        <article className="rounded-2xl bg-white p-4 shadow-sm shadow-prime-gold/10 ring-1 ring-prime-gold/10">
+          <p className="text-xs font-semibold text-prime-gold">Tips Mata Sehat</p>
+          <p className="mt-1 text-sm text-prime-black/70">Istirahatkan mata setiap 20 menit saat menatap layar.</p>
         </article>
-        <article className="rounded-2xl bg-white p-4 shadow-sm shadow-slate-100 ring-1 ring-slate-100">
-          <p className="text-xs font-semibold text-cyan-700">Layanan Cepat</p>
-          <p className="mt-1 text-sm text-slate-600">Booking dokter mata tanpa antre panjang.</p>
+        <article className="rounded-2xl bg-white p-4 shadow-sm shadow-prime-gold/10 ring-1 ring-prime-gold/10">
+          <p className="text-xs font-semibold text-prime-gold">Layanan Cepat</p>
+          <p className="mt-1 text-sm text-prime-black/70">Booking dokter mata tanpa antre panjang.</p>
         </article>
       </div>
     </div>

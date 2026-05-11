@@ -60,11 +60,11 @@ export function DailyWinsCard() {
   };
 
   return (
-    <article className="overflow-hidden rounded-[20px] border border-prime-gold/20 bg-white shadow-lg shadow-prime-gold/10">
+    <article className="overflow-hidden rounded-[28px] border border-prime-gold/20 bg-white shadow-lg shadow-prime-gold/10">
       <div className="bg-gradient-to-br from-prime-gold via-[#c8aa44] to-prime-cream p-4 text-white">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/90">
+            <p className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/90">
               <Sparkles size={13} /> Daily Wins
             </p>
             <h2 className="mt-3 text-lg font-semibold">Rawat mata, kumpulkan poin sehat.</h2>
@@ -78,17 +78,17 @@ export function DailyWinsCard() {
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2">
-          <div className="rounded-2xl bg-white/15 p-2.5 backdrop-blur">
+          <div className="rounded-2xl bg-white/20 p-2.5 backdrop-blur">
             <p className="text-[11px] text-white/90">Status</p>
             <p className="mt-1 text-xs font-semibold">{checkInDone ? 'Sudah check-in hari ini' : 'Belum check-in hari ini'}</p>
           </div>
-          <div className="rounded-2xl bg-white/15 p-2.5 backdrop-blur">
+          <div className="rounded-2xl bg-white/20 p-2.5 backdrop-blur">
             <p className="text-[11px] text-white/90">Streak</p>
             <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold">
               <Flame size={13} /> {user.currentStreak} hari
             </p>
           </div>
-          <div className="rounded-2xl bg-white/15 p-2.5 backdrop-blur">
+          <div className="rounded-2xl bg-white/20 p-2.5 backdrop-blur">
             <p className="text-[11px] text-white/90">Poin</p>
             <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold">
               <Coins size={13} /> {user.totalPoints}
@@ -103,7 +103,7 @@ export function DailyWinsCard() {
           onClick={() => showFeedback(checkInDaily(user.userId))}
           className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold shadow-md transition duration-200 ${
             checkInDone
-              ? 'bg-slate-100 text-slate-500 shadow-slate-100'
+              ? 'bg-prime-cream/50 text-prime-black/60 shadow-prime-gold/10'
               : 'bg-prime-gold text-white shadow-prime-gold/20 hover:-translate-y-0.5 hover:bg-[#9e8629] active:scale-[0.98]'
           }`}
         >
@@ -114,7 +114,7 @@ export function DailyWinsCard() {
         {feedback && (
           <div
             className={`rounded-2xl px-3 py-2 text-xs font-medium ${
-              feedback.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+              feedback.type === 'success' ? 'bg-prime-cream/60 text-prime-gold' : 'bg-prime-cream/50 text-prime-gold'
             }`}
           >
             {feedback.message}
@@ -123,19 +123,19 @@ export function DailyWinsCard() {
 
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">Misi Hari Ini</h3>
-            <p className="text-xs text-slate-500">{completedMissionCount} dari {missions.length} misi selesai</p>
+            <h3 className="text-sm font-semibold text-prime-black">Misi Hari Ini</h3>
+            <p className="text-xs text-prime-black/60">{completedMissionCount} dari {missions.length} misi selesai</p>
           </div>
           <span className="rounded-full bg-prime-cream/70 px-3 py-1 text-xs font-semibold text-prime-gold">Reset harian</span>
         </div>
 
         <div className="space-y-2">
           {missions.map((mission) => (
-            <div key={mission.id} className="rounded-2xl border border-prime-gold/15 bg-prime-cream/35 p-3">
+            <div key={mission.id} className="rounded-2xl border border-prime-gold/20 bg-prime-cream/40 p-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">{mission.title}</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{mission.description}</p>
+                  <p className="text-sm font-semibold text-prime-black">{mission.title}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-prime-black/60">{mission.description}</p>
                 </div>
                 <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-prime-gold">
                   +{mission.pointReward}
@@ -145,7 +145,7 @@ export function DailyWinsCard() {
                 type="button"
                 disabled={mission.isCompleted}
                 onClick={() => showFeedback(completeMission(user.userId, mission.id))}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-prime-gold shadow-sm transition hover:bg-prime-cream/50 disabled:cursor-not-allowed disabled:text-emerald-700 disabled:opacity-80"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-prime-gold shadow-sm transition hover:bg-prime-cream/50 disabled:cursor-not-allowed disabled:text-prime-gold disabled:opacity-80"
               >
                 {mission.isCompleted ? <CheckCircle2 size={14} /> : <ChevronRight size={14} />}
                 {mission.isCompleted ? 'Completed' : missionActionLabels[mission.missionType]}
@@ -162,11 +162,11 @@ export function PointsStreakCard() {
   const user = useGamificationStore((state) => state.getUserGamificationSummary('patient-001'));
 
   return (
-    <article className="rounded-[20px] bg-white p-4 shadow-md shadow-slate-200/70">
+    <article className="rounded-[28px] bg-white p-4 shadow-md shadow-prime-gold/10">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-prime-gold">Prime Daily Wins</p>
-          <h2 className="mt-1 text-base font-semibold text-slate-900">Progress kesehatan mata</h2>
+          <h2 className="mt-1 text-base font-semibold text-prime-black">Progress kesehatan mata</h2>
         </div>
         <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-prime-cream/60 text-prime-gold">
           <Award size={18} />
@@ -174,20 +174,20 @@ export function PointsStreakCard() {
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2">
         <div className="rounded-2xl bg-prime-cream/60 p-3">
-          <p className="text-xs text-slate-500">Total Poin</p>
+          <p className="text-xs text-prime-black/60">Total Poin</p>
           <p className="mt-1 inline-flex items-center gap-1 text-xl font-semibold text-prime-gold">
             <Coins size={17} /> {user.totalPoints}
           </p>
         </div>
-        <div className="rounded-2xl bg-orange-50 p-3">
-          <p className="text-xs text-slate-500">Streak Harian</p>
-          <p className="mt-1 inline-flex items-center gap-1 text-xl font-semibold text-amber-600">
+        <div className="rounded-2xl bg-prime-cream/50 p-3">
+          <p className="text-xs text-prime-black/60">Streak Harian</p>
+          <p className="mt-1 inline-flex items-center gap-1 text-xl font-semibold text-prime-gold">
             <Flame size={17} /> {user.currentStreak} hari
           </p>
         </div>
       </div>
-      <p className="mt-3 inline-flex items-center gap-1 text-xs text-slate-500">
-        <CheckCircle2 size={14} className="text-emerald-600" /> Level {user.level} • Longest streak {user.longestStreak} hari
+      <p className="mt-3 inline-flex items-center gap-1 text-xs text-prime-black/60">
+        <CheckCircle2 size={14} className="text-prime-gold" /> Level {user.level} • Longest streak {user.longestStreak} hari
       </p>
     </article>
   );
@@ -197,11 +197,11 @@ export function BadgeSection() {
   const badges = useGamificationStore((state) => state.badges);
 
   return (
-    <section className="rounded-[20px] bg-white p-4 shadow-md shadow-slate-200/70">
+    <section className="rounded-[28px] bg-white p-4 shadow-md shadow-prime-gold/10">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Medal size={17} className="text-prime-gold" />
-          <h2 className="text-base font-semibold text-slate-900">Badge Achievement</h2>
+          <h2 className="text-base font-semibold text-prime-black">Badge Achievement</h2>
         </div>
         <span className="rounded-full bg-prime-cream/60 px-2.5 py-1 text-xs font-semibold text-prime-gold">
           {badges.filter((badge) => badge.isUnlocked).length}/{badges.length}
@@ -216,25 +216,25 @@ export function BadgeSection() {
             <article
               key={badge.id}
               className={`rounded-2xl border p-3 transition ${
-                badge.isUnlocked ? 'border-prime-gold/30 bg-prime-cream/60/60' : 'border-slate-100 bg-slate-50/80'
+                badge.isUnlocked ? 'border-prime-gold/30 bg-prime-cream/60' : 'border-prime-gold/10 bg-[#fff8e8]/80'
               }`}
             >
               <div className="flex items-start gap-3">
                 <span
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
-                    badge.isUnlocked ? 'bg-white text-prime-gold shadow-sm' : 'bg-white text-slate-400'
+                    badge.isUnlocked ? 'bg-white text-prime-gold shadow-sm' : 'bg-white text-prime-black/40'
                   }`}
                 >
                   {badge.isUnlocked ? <Icon size={18} /> : <LockKeyhole size={16} />}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-900">{badge.name}</p>
-                    <span className={`text-[11px] font-semibold ${badge.isUnlocked ? 'text-emerald-600' : 'text-slate-400'}`}>
+                    <p className="text-sm font-semibold text-prime-black">{badge.name}</p>
+                    <span className={`text-[11px] font-semibold ${badge.isUnlocked ? 'text-prime-gold' : 'text-prime-black/40'}`}>
                       {badge.isUnlocked ? 'Unlocked' : 'Locked'}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{badge.description}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-prime-black/60">{badge.description}</p>
                   <p className="mt-1 text-[11px] text-prime-gold">
                     {badge.isUnlocked ? `Didapat ${formatDate(badge.unlockedAt)}` : `Target: ${badge.requirementValue}`}
                   </p>
@@ -265,27 +265,27 @@ export function RewardSection() {
   };
 
   return (
-    <section className="rounded-[20px] border border-prime-gold/20 bg-white p-4 shadow-md shadow-prime-gold/10">
+    <section className="rounded-[28px] border border-prime-gold/20 bg-white p-4 shadow-md shadow-prime-gold/10">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Gift size={17} className="text-prime-gold" />
-          <h3 className="text-base font-semibold text-slate-900">Reward & Voucher</h3>
+          <h3 className="text-base font-semibold text-prime-black">Reward & Voucher</h3>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+        <span className="inline-flex items-center gap-1 rounded-full bg-prime-cream/50 px-2.5 py-1 text-xs font-semibold text-prime-gold">
           <Coins size={13} /> {user.totalPoints}
         </span>
       </div>
 
       {nextReward && (
-        <div className="mt-3 rounded-2xl bg-slate-50 p-3">
-          <div className="flex items-center justify-between text-xs text-slate-500">
+        <div className="mt-3 rounded-2xl bg-[#fff8e8] p-3">
+          <div className="flex items-center justify-between text-xs text-prime-black/60">
             <span>Progress ke reward berikutnya</span>
             <span className="font-semibold text-prime-gold">{progress}%</span>
           </div>
           <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white">
             <div className="h-full rounded-full bg-gradient-to-r from-prime-gold to-[#d7bd64] transition-all" style={{ width: `${progress}%` }} />
           </div>
-          <p className="mt-2 text-xs font-medium text-slate-700">{nextReward.title}</p>
+          <p className="mt-2 text-xs font-medium text-prime-black/75">{nextReward.title}</p>
         </div>
       )}
 
@@ -296,11 +296,11 @@ export function RewardSection() {
           const enoughPoints = user.totalPoints >= reward.pointsRequired;
 
           return (
-            <article key={reward.id} className="rounded-2xl border border-prime-gold/20 bg-prime-cream/60/40 p-3">
+            <article key={reward.id} className="rounded-2xl border border-prime-gold/20 bg-prime-cream/40 p-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">{reward.title}</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{reward.description}</p>
+                  <p className="text-sm font-semibold text-prime-black">{reward.title}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-prime-black/60">{reward.description}</p>
                   <p className="mt-1 text-xs font-semibold text-prime-gold">Butuh {reward.pointsRequired} poin • Nilai {reward.value}</p>
                 </div>
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-prime-gold shadow-sm">
@@ -311,7 +311,7 @@ export function RewardSection() {
                 type="button"
                 disabled={!enoughPoints}
                 onClick={() => handleRedeem(reward.id)}
-                className="mt-3 rounded-xl bg-prime-gold px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-prime-gold/20 transition hover:bg-[#9e8629] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                className="mt-3 rounded-xl bg-prime-gold px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-prime-gold/20 transition hover:bg-[#9e8629] disabled:cursor-not-allowed disabled:bg-prime-black/20 disabled:text-prime-black/60 disabled:shadow-none"
               >
                 {enoughPoints ? 'Tukar Poin' : 'Poin belum cukup'}
               </button>

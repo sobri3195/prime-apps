@@ -85,13 +85,13 @@ export function CekBotDummy() {
   const isApiResponse = lastResponse?.source === 'api';
 
   return (
-    <section className="space-y-3 rounded-3xl border border-cyan-100 bg-white p-5 shadow-lg shadow-cyan-50">
+    <section className="space-y-3 rounded-3xl border border-prime-gold/20 bg-white p-5 shadow-lg shadow-prime-gold/10">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-800">CekBot</h2>
-          <p className="text-sm text-slate-500">Tanyakan layanan Prime Apps, jadwal, biaya, atau informasi kesehatan mata.</p>
+          <h2 className="text-lg font-semibold text-prime-black">CekBot</h2>
+          <p className="text-sm text-prime-black/60">Tanyakan layanan Prime Apps, jadwal, biaya, atau informasi kesehatan mata.</p>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full bg-cyan-50 px-2.5 py-1 text-[11px] font-semibold text-cyan-700">
+        <span className="inline-flex items-center gap-1 rounded-full bg-prime-cream/50 px-2.5 py-1 text-[11px] font-semibold text-prime-gold">
           {isApiResponse || activeIntegrationCount > 0 ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
           {isApiResponse ? 'API aktif' : 'Mode lokal'}
         </span>
@@ -103,8 +103,8 @@ export function CekBotDummy() {
             key={message.id}
             className={`max-w-[85%] rounded-2xl p-3 text-sm ${
               message.from === 'bot'
-                ? 'rounded-bl-md bg-sky-50 text-slate-700'
-                : 'ml-auto rounded-br-md bg-cyan-600 text-white'
+                ? 'rounded-bl-md bg-prime-cream/50 text-prime-black/75'
+                : 'ml-auto rounded-br-md bg-prime-gold text-white'
             }`}
           >
             {message.text}
@@ -124,7 +124,7 @@ export function CekBotDummy() {
             key={item}
             type="button"
             onClick={() => void handleSend(item)}
-            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 transition hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full border border-prime-gold/20 bg-white px-3 py-1.5 text-xs text-prime-black/70 transition hover:border-prime-gold/40 hover:text-prime-gold disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isSending}
             aria-label={`Tanyakan: ${item}`}
           >
@@ -133,16 +133,16 @@ export function CekBotDummy() {
         ))}
       </div>
 
-      {error && <p className="rounded-2xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">{error}</p>}
+      {error && <p className="rounded-2xl bg-prime-cream/50 px-3 py-2 text-xs font-medium text-prime-gold">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2">
+      <form onSubmit={handleSubmit} className="flex items-center gap-2 rounded-2xl border border-prime-gold/20 bg-[#fff8e8] p-2">
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
           className="flex-1 bg-transparent px-2 text-sm outline-none"
           placeholder="Ketik pertanyaan Anda..."
         />
-        <button type="submit" disabled={isSending} className="rounded-xl bg-cyan-600 p-2 text-white transition disabled:cursor-not-allowed disabled:bg-slate-300">
+        <button type="submit" disabled={isSending} className="rounded-xl bg-prime-gold p-2 text-white transition disabled:cursor-not-allowed disabled:bg-prime-black/20">
           <span className="sr-only">Kirim pertanyaan ke CekBot</span>
           <SendHorizontal size={16} />
         </button>

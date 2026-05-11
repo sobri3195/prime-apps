@@ -19,7 +19,7 @@ export function BottomNavigation() {
               to={path}
               className={({ isActive }) =>
                 `flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] transition-all ${
-                  isActive ? 'text-prime-gold' : 'text-prime-black/55'
+                  isActive ? 'text-prime-gold' : 'text-prime-black/60'
                 }`
               }
             >
