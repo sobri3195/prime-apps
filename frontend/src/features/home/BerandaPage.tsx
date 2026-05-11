@@ -76,29 +76,29 @@ export function BerandaPage() {
   };
 
   return (
-    <section className="space-y-4 pb-3 text-prime-black">
-      <header className="rounded-[28px] border border-prime-gold/15 bg-white px-4 py-4 shadow-sm shadow-prime-gold/10">
+    <section className="space-y-6 text-prime-black">
+      <header className="rounded-[28px] border border-prime-gold/20 bg-white px-4 py-4 shadow-sm shadow-prime-gold/10">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <img
               src={primeLogo}
               alt="PRIME Committed to Care"
-              className="h-auto w-[150px] max-w-full object-contain"
+              className="h-auto w-[136px] max-w-full object-contain"
             />
             <div className="mt-4 space-y-1">
               <p className="text-2xl font-bold tracking-[-0.02em] text-prime-black">Halo, Pasien 👋</p>
-              <p className="text-sm font-medium text-prime-black/65">Selamat datang di Klinik Utama Prime</p>
+              <p className="text-sm font-medium text-prime-black/70">Selamat datang di Klinik Utama Prime</p>
             </div>
           </div>
-          <button className="relative rounded-2xl border border-prime-gold/20 bg-prime-cream/45 p-2.5 text-prime-gold shadow-sm shadow-prime-gold/10">
+          <button className="relative rounded-2xl border border-prime-gold/20 bg-prime-cream/50 p-2.5 text-prime-gold shadow-sm shadow-prime-gold/10">
             <Bell className="h-5 w-5" />
             <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-prime-gold" />
           </button>
         </div>
       </header>
 
-      <article className="relative overflow-hidden rounded-[28px] border border-prime-gold/15 bg-gradient-to-br from-prime-gold via-[#d7bd64] to-prime-cream p-5 text-white shadow-lg shadow-prime-gold/20">
-        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/35 blur-sm" />
+      <article className="relative overflow-hidden rounded-[28px] border border-prime-gold/20 bg-gradient-to-br from-prime-gold via-[#d7bd64] to-prime-cream p-5 text-white shadow-lg shadow-prime-gold/20">
+        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/40 blur-sm" />
         <div className="absolute -bottom-12 left-8 h-28 w-28 rounded-full bg-white/30 blur-md" />
         <div className="absolute bottom-0 right-0 h-24 w-24 rounded-tl-full bg-prime-black/5" />
         <div className="relative space-y-3">
@@ -118,7 +118,7 @@ export function BerandaPage() {
         </div>
       </article>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3.5">
         {quickActions.map((action) => {
           const Icon = action.icon;
 
@@ -127,22 +127,22 @@ export function BerandaPage() {
               key={action.title}
               type="button"
               onClick={() => handleQuickAction(action.title)}
-              className={`rounded-2xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+              className={`flex min-h-[156px] flex-col rounded-[24px] border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                 action.primary
                   ? 'border-prime-gold bg-prime-gold text-white shadow-md shadow-prime-gold/20'
                   : 'border-prime-gold/25 bg-prime-cream/70 text-prime-black shadow-sm shadow-prime-gold/10'
               }`}
             >
-              <Icon className={`mb-2 h-5 w-5 ${action.primary ? 'text-white' : 'text-prime-gold'}`} />
+              <span className={`mb-3 flex h-10 w-10 items-center justify-center rounded-2xl ${action.primary ? 'bg-white/20 text-white' : 'bg-white text-prime-gold shadow-sm shadow-prime-gold/10'}`}><Icon className="h-5 w-5" /></span>
               <p className="text-sm font-bold">{action.title}</p>
-              <p className={`mt-1 text-xs font-medium leading-relaxed ${action.primary ? 'text-white/90' : 'text-prime-black/60'}`}>{action.description}</p>
+              <p className={`mt-2 text-xs font-medium leading-relaxed ${action.primary ? 'text-white/90' : 'text-prime-black/60'}`}>{action.description}</p>
             </button>
           );
         })}
       </div>
 
       {feedback && (
-        <p className="rounded-2xl border border-prime-gold/20 bg-prime-cream/65 px-3 py-2 text-xs font-semibold text-prime-black">{feedback}</p>
+        <p className="rounded-2xl border border-prime-gold/20 bg-prime-cream/70 px-3 py-2 text-xs font-semibold text-prime-black">{feedback}</p>
       )}
 
       <article className="rounded-[28px] border border-prime-gold/20 bg-white p-4 shadow-sm shadow-prime-gold/10">
@@ -151,7 +151,7 @@ export function BerandaPage() {
             <p className="text-xs font-bold uppercase tracking-wide text-prime-gold">Antrean Hari Ini</p>
             <p className="mt-2 text-2xl font-bold text-prime-black">A-017</p>
             <p className="mt-1 text-sm font-medium text-prime-black/60">Estimasi tunggu 15 menit</p>
-            <p className="mt-1 text-xs font-semibold text-amber-700">Status: Menunggu Pemeriksaan</p>
+            <p className="mt-1 text-xs font-semibold text-prime-gold">Status: Menunggu Pemeriksaan</p>
           </div>
           <div className="rounded-2xl bg-prime-cream/75 p-2.5 text-prime-gold">
             <Clock3 className="h-5 w-5" />
@@ -181,7 +181,7 @@ export function BerandaPage() {
         <h3 className="text-sm font-bold text-prime-black">Menu Cepat</h3>
         <div className="mt-3 grid grid-cols-4 gap-2">
           {quickMenus.map(({ title, icon: Icon }) => (
-            <button key={title} type="button" onClick={() => handleQuickMenu(title)} className="space-y-2 rounded-2xl border border-prime-gold/15 bg-prime-cream/55 p-2.5 text-center transition hover:bg-prime-cream">
+            <button key={title} type="button" onClick={() => handleQuickMenu(title)} className="space-y-2 rounded-2xl border border-prime-gold/20 bg-prime-cream/60 p-2.5 text-center transition hover:bg-prime-cream">
               <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-white text-prime-gold shadow-sm shadow-prime-gold/10">
                 <Icon className="h-4 w-4" />
               </span>

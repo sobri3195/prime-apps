@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-labelledby="title desc">
   <title id="title">Vitamin mata</title>
   <desc id="desc">Ilustrasi botol vitamin mata dan kapsul suplemen.</desc>
-  <defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#fff7ed"/><stop offset="1" stop-color="#cffafe"/></linearGradient></defs>
+  <defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#FFE7AB"/></linearGradient></defs>
   <rect width="320" height="240" rx="32" fill="url(#bg)"/>
-  <rect x="104" y="58" width="98" height="138" rx="24" fill="#fff" stroke="#f59e0b" stroke-width="6"/>
-  <rect x="121" y="39" width="64" height="29" rx="10" fill="#0e7490"/>
-  <rect x="121" y="102" width="64" height="52" rx="16" fill="#fef3c7"/>
-  <path d="M153 108c20 18 29 31 29 42 0 16-13 29-29 29s-29-13-29-29c0-11 9-24 29-42Z" fill="#fbbf24"/>
+  <rect x="104" y="58" width="98" height="138" rx="24" fill="#fff" stroke="#B19731" stroke-width="6"/>
+  <rect x="121" y="39" width="64" height="29" rx="10" fill="#231F20"/>
+  <rect x="121" y="102" width="64" height="52" rx="16" fill="#FFF8E8"/>
+  <path d="M153 108c20 18 29 31 29 42 0 16-13 29-29 29s-29-13-29-29c0-11 9-24 29-42Z" fill="#D7BD64"/>
   <g opacity=".9">
-    <rect x="204" y="150" width="52" height="23" rx="12" fill="#06b6d4" transform="rotate(-22 230 162)"/>
-    <rect x="63" y="157" width="58" height="24" rx="12" fill="#fb923c" transform="rotate(18 92 169)"/>
+    <rect x="204" y="150" width="52" height="23" rx="12" fill="#B19731" transform="rotate(-22 230 162)"/>
+    <rect x="63" y="157" width="58" height="24" rx="12" fill="#FFE7AB" transform="rotate(18 92 169)"/>
   </g>
 </svg>
