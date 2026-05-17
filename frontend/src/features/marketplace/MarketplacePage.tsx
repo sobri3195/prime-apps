@@ -2,33 +2,82 @@ import {
   Bell,
   BookmarkPlus,
   CheckCircle2,
+  Coins,
   Eye,
   Filter,
+  Gift,
   Glasses,
   Heart,
   Minus,
   Pill,
   Plus,
   Search,
-  ShoppingCart,
   ShieldCheck,
+  ShoppingCart,
   Sparkles,
   Stethoscope,
   Trash2,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import frameClassicImage from '@/assets/marketplace/frame-classic.svg';
 import contactLensImage from '@/assets/marketplace/contact-lens.svg';
 import eyeDropsImage from '@/assets/marketplace/eye-drops.svg';
 import eyeVitaminImage from '@/assets/marketplace/eye-vitamin.svg';
 import clinicCheckupImage from '@/assets/marketplace/clinic-checkup.svg';
-import { RewardSection } from '../gamification/GamificationComponents';
 import {
   POINT_RULES,
   useGamificationStore,
 } from '../gamification/gamificationStore';
 
-const categories = [
+const MARKETPLACE_CART_KEY = 'prime_marketplace_cart';
+const MARKETPLACE_FAVORITES_KEY = 'prime_marketplace_favorites';
+const MARKETPLACE_SELECTED_CATEGORY_KEY = 'prime_marketplace_selected_category';
+const DEFAULT_CATEGORY = 'Semua';
+
+type CategoryName =
+  | 'Semua'
+  | 'Kacamata'
+  | 'Lensa Kontak'
+  | 'Tetes Mata'
+  | 'Vitamin Mata'
+  | 'Paket Klinik';
+
+type Product = {
+  name: string;
+  desc: string;
+  price: string;
+  priceValue: number;
+  category: CategoryName;
+  icon: LucideIcon;
+  image: string;
+  badge: string;
+};
+
+type Service = {
+  title: string;
+  desc: string;
+  price: string;
+  priceValue: number;
+  category: CategoryName;
+  badge: string;
+  image: string;
+};
+
+type CartItem = {
+  name: string;
+  price: string;
+  priceValue: number;
+  quantity: number;
+  kind: 'product' | 'service';
+};
+
+const categories: Array<{
+  name: CategoryName;
+  icon: LucideIcon;
+  image: string;
+}> = [
+  { name: DEFAULT_CATEGORY, icon: Sparkles, image: clinicCheckupImage },
   { name: 'Kacamata', icon: Glasses, image: frameClassicImage },
   { name: 'Lensa Kontak', icon: Eye, image: contactLensImage },
   { name: 'Tetes Mata', icon: Pill, image: eyeDropsImage },
@@ -36,7 +85,7 @@ const categories = [
   { name: 'Paket Klinik', icon: Stethoscope, image: clinicCheckupImage },
 ];
 
-const products = [
+const products: Product[] = [
   {
     name: 'Frame Kacamata Prime Classic',
     desc: 'Unisex / ringan',
@@ -79,7 +128,7 @@ const products = [
   },
 ];
 
-const services = [
+const services: Service[] = [
   {
     title: 'Paket Pemeriksaan Mata Lengkap',
     desc: 'Cek mata menyeluruh dengan dokter & optometri',
@@ -118,12 +167,12 @@ const services = [
   },
 ];
 
-type CartItem = {
-  name: string;
-  price: string;
-  priceValue: number;
-  quantity: number;
-};
+const benefits = [
+  { title: 'Produk Original', icon: ShieldCheck, copy: 'Kurasi klinik' },
+  { title: 'Rekomendasi Dokter', icon: Stethoscope, copy: 'Lebih terarah' },
+  { title: 'Booking Mudah', icon: BookmarkPlus, copy: 'Satu ketukan' },
+  { title: 'Reward & Voucher', icon: Gift, copy: 'Poin pasien' },
+];
 
 const formatRupiah = (value: number) =>
   new Intl.NumberFormat('id-ID', {
@@ -132,26 +181,750 @@ const formatRupiah = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value);
 
-const trustCards = [
-  { title: 'Produk Original', icon: ShieldCheck },
-  { title: 'Rekomendasi Dokter', icon: Stethoscope },
-  { title: 'Booking Mudah', icon: BookmarkPlus },
-];
+const isCategoryName = (value: string): value is CategoryName =>
+  categories.some((category) => category.name === value);
+
+function readStorage<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') {
+    return fallback;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(key);
+    return rawValue ? (JSON.parse(rawValue) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function MarketplaceHeader() {
+  return (
+    <header className="flex items-start justify-between gap-4 rounded-[28px] border border-white/80 bg-white/80 p-4 shadow-prime-card backdrop-blur">
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-prime-gold-dark/75">
+          Prime Belanja
+        </p>
+        <h1 className="mt-1 text-[28px] font-bold leading-tight tracking-tight text-prime-black">
+          Marketplace
+        </h1>
+        <p className="mt-1 max-w-[270px] text-sm leading-relaxed text-prime-muted">
+          Fokus belanja kebutuhan mata dengan gambar produk jelas
+        </p>
+      </div>
+      <button
+        type="button"
+        className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] border border-prime-gold/20 bg-prime-cream/45 text-prime-gold-dark shadow-sm transition hover:bg-prime-cream/70 focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:scale-95"
+        aria-label="Buka notifikasi marketplace"
+      >
+        <Bell className="h-5 w-5" aria-hidden="true" />
+        <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full border-2 border-white bg-rose-500" />
+      </button>
+    </header>
+  );
+}
+
+function SearchFilterBar({
+  searchTerm,
+  selectedCategory,
+  onSearchChange,
+  onFilterClick,
+}: {
+  searchTerm: string;
+  selectedCategory: CategoryName;
+  onSearchChange: (value: string) => void;
+  onFilterClick: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <label className="group flex min-h-[54px] flex-1 items-center gap-2.5 rounded-[20px] border border-prime-gold/15 bg-white px-4 shadow-prime-card transition focus-within:border-prime-gold/55 focus-within:ring-4 focus-within:ring-prime-gold/15">
+        <Search className="h-[18px] w-[18px] shrink-0 text-prime-muted" aria-hidden="true" />
+        <input
+          value={searchTerm}
+          onChange={(event) => onSearchChange(event.target.value)}
+          className="w-full bg-transparent text-[15px] font-medium text-prime-black outline-none placeholder:text-prime-muted/65"
+          placeholder="Cari produk atau layanan mata"
+          type="search"
+        />
+      </label>
+      <button
+        type="button"
+        onClick={onFilterClick}
+        className={`flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-[18px] border shadow-prime-card transition focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:scale-95 ${
+          selectedCategory === 'Paket Klinik'
+            ? 'border-prime-gold bg-prime-gold text-white'
+            : 'border-prime-gold/15 bg-white text-prime-gold-dark'
+        }`}
+        aria-label="Filter layanan klinik"
+      >
+        <Filter className="h-5 w-5" aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+function MarketplaceHero() {
+  return (
+    <article className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#fff7dc] via-[#d6b653] to-[#9d7b1f] p-5 text-prime-black shadow-prime-lift">
+      <div className="absolute -right-14 -top-16 h-36 w-36 rounded-full bg-white/45 blur-2xl" />
+      <div className="absolute -bottom-16 left-8 h-28 w-28 rounded-full bg-prime-teal-soft/80 blur-2xl" />
+      <div className="relative grid grid-cols-[1fr_102px] items-center gap-3">
+        <div className="min-w-0">
+          <p className="inline-flex rounded-full bg-white/55 px-3 py-1 text-xs font-bold text-prime-gold-dark shadow-sm">
+            Etalase Prime
+          </p>
+          <h2 className="mt-3 text-xl font-bold leading-snug text-[#221b10]">
+            Etalase fokus kebutuhan mata Prime
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-[#433515]">
+            Produk terpercaya dan layanan profesional untuk kesehatan mata Anda.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {['Aman & Terpercaya', 'Produk Berkualitas', 'Booking Mudah'].map(
+              (point) => (
+                <span
+                  key={point}
+                  className="rounded-full border border-white/50 bg-white/45 px-2.5 py-1 text-[11px] font-bold text-[#453510] backdrop-blur"
+                >
+                  {point}
+                </span>
+              ),
+            )}
+          </div>
+        </div>
+        <div className="rounded-[24px] border border-white/45 bg-white/45 p-2 shadow-sm backdrop-blur">
+          <img
+            src={clinicCheckupImage}
+            alt="Ilustrasi produk dan layanan pemeriksaan mata Prime"
+            className="h-28 w-full object-contain"
+          />
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function SectionHeader({
+  title,
+  action,
+}: {
+  title: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <h2 className="text-lg font-bold tracking-tight text-prime-black">
+        {title}
+      </h2>
+      {action}
+    </div>
+  );
+}
+
+function CategoryScroller({
+  selectedCategory,
+  onSelectCategory,
+}: {
+  selectedCategory: CategoryName;
+  onSelectCategory: (category: CategoryName) => void;
+}) {
+  return (
+    <section className="space-y-3">
+      <SectionHeader
+        title="Kategori Cepat"
+        action={
+          <p className="text-xs font-semibold text-prime-gold-dark/80">
+            Pilih sesuai kebutuhan 👁️
+          </p>
+        }
+      />
+      <div className="marketplace-scrollbar-hide -mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-1 sm:-mx-6 sm:px-6">
+        {categories.map(({ name, icon: Icon, image }) => {
+          const isSelected = selectedCategory === name;
+
+          return (
+            <button
+              key={name}
+              type="button"
+              onClick={() => onSelectCategory(name)}
+              className={`min-h-[118px] min-w-[104px] snap-start rounded-[22px] border p-2.5 text-center shadow-prime-card transition focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:scale-[0.97] ${
+                isSelected
+                  ? 'border-prime-gold/70 bg-prime-gold-soft text-prime-gold-dark ring-1 ring-prime-gold/25'
+                  : 'border-white bg-white text-prime-black hover:border-prime-gold/25'
+              }`}
+              aria-pressed={isSelected}
+            >
+              <span
+                className={`mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] ${
+                  isSelected ? 'bg-white' : 'bg-[#fff8e8]'
+                }`}
+              >
+                <img
+                  src={image}
+                  alt={`Gambar kategori ${name}`}
+                  className="h-11 w-11 object-contain"
+                />
+              </span>
+              <span
+                className={`mx-auto mt-2 flex h-7 w-7 items-center justify-center rounded-xl ${
+                  isSelected
+                    ? 'bg-prime-gold text-white'
+                    : 'bg-prime-teal-soft text-prime-teal'
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+              </span>
+              <span className="mt-1.5 block text-xs font-bold leading-snug">
+                {name}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function ProductCard({
+  product,
+  isFavorite,
+  onToggleFavorite,
+  onAddToCart,
+}: {
+  product: Product;
+  isFavorite: boolean;
+  onToggleFavorite: (name: string) => void;
+  onAddToCart: (item: Pick<CartItem, 'name' | 'price' | 'priceValue' | 'kind'>) => void;
+}) {
+  const Icon = product.icon;
+
+  return (
+    <article className="group flex min-h-[258px] flex-col rounded-[24px] border border-white bg-white p-2.5 shadow-prime-card transition hover:-translate-y-0.5 hover:border-prime-gold/25 active:scale-[0.99]">
+      <div className="relative rounded-[20px] bg-gradient-to-br from-[#fff8e8] to-prime-teal-soft/70 p-3">
+        <img
+          src={product.image}
+          alt={`Foto produk ${product.name}`}
+          className="h-[104px] w-full object-contain"
+        />
+        <span className="absolute left-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-prime-gold-dark shadow-sm">
+          {product.badge}
+        </span>
+        <button
+          type="button"
+          onClick={() => onToggleFavorite(product.name)}
+          className={`absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm transition focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:scale-90 ${
+            isFavorite ? 'text-rose-500' : 'text-prime-muted'
+          }`}
+          aria-label={`${isFavorite ? 'Hapus favorit' : 'Tambahkan favorit'} ${product.name}`}
+          aria-pressed={isFavorite}
+        >
+          <Heart
+            className="h-4 w-4"
+            fill={isFavorite ? 'currentColor' : 'none'}
+            aria-hidden="true"
+          />
+        </button>
+        <span className="absolute bottom-2.5 left-2.5 flex h-8 w-8 items-center justify-center rounded-2xl bg-white/95 text-prime-teal shadow-sm">
+          <Icon className="h-4 w-4" aria-hidden="true" />
+        </span>
+      </div>
+      <div className="flex flex-1 flex-col px-1.5 pb-1 pt-3">
+        <h3 className="line-clamp-2 min-h-[40px] text-[15px] font-bold leading-snug text-prime-black">
+          {product.name}
+        </h3>
+        <p className="mt-1 text-xs font-medium text-prime-muted">
+          {product.desc}
+        </p>
+        <div className="mt-auto flex items-center justify-between gap-2 pt-3">
+          <p className="text-[15px] font-extrabold text-prime-gold-dark">
+            {product.price}
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              onAddToCart({
+                name: product.name,
+                price: product.price,
+                priceValue: product.priceValue,
+                kind: 'product',
+              })
+            }
+            className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-prime-gold text-white shadow-sm shadow-prime-gold/20 transition focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:scale-90"
+            aria-label={`Tambah ${product.name} ke keranjang`}
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function ProductGrid({
+  products: productItems,
+  favorites,
+  onToggleFavorite,
+  onAddToCart,
+}: {
+  products: Product[];
+  favorites: string[];
+  onToggleFavorite: (name: string) => void;
+  onAddToCart: (item: Pick<CartItem, 'name' | 'price' | 'priceValue' | 'kind'>) => void;
+}) {
+  return (
+    <section className="space-y-3">
+      <SectionHeader
+        title="Produk Pilihan"
+        action={
+          <button
+            type="button"
+            className="rounded-full px-2 py-1 text-xs font-bold text-prime-gold-dark transition hover:bg-prime-gold-soft focus:outline-none focus:ring-4 focus:ring-prime-gold/20"
+          >
+            Lihat semua
+          </button>
+        }
+      />
+      {productItems.length ? (
+        <div className="grid grid-cols-2 gap-3">
+          {productItems.map((product) => (
+            <ProductCard
+              key={product.name}
+              product={product}
+              isFavorite={favorites.includes(product.name)}
+              onToggleFavorite={onToggleFavorite}
+              onAddToCart={onAddToCart}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState message="Produk tidak ditemukan untuk filter saat ini." />
+      )}
+    </section>
+  );
+}
+
+function ServiceCard({
+  service,
+  onBookService,
+}: {
+  service: Service;
+  onBookService: (service: Service) => void;
+}) {
+  return (
+    <article className="rounded-[24px] border border-prime-teal/10 bg-white p-3 shadow-prime-card">
+      <div className="flex items-center gap-3">
+        <div className="flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-[22px] bg-prime-teal-soft p-2.5">
+          <img
+            src={service.image}
+            alt={`Ilustrasi layanan ${service.title}`}
+            className="h-full w-full object-contain"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <span className="rounded-full bg-prime-teal-soft px-2.5 py-1 text-[11px] font-bold text-prime-teal">
+            {service.badge}
+          </span>
+          <h3 className="mt-2 text-[15px] font-bold leading-snug text-prime-black">
+            {service.title}
+          </h3>
+          <p className="mt-1 text-xs leading-relaxed text-prime-muted">
+            {service.desc}
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-prime-teal/10 pt-3">
+        <p className="text-base font-extrabold text-prime-teal">
+          {service.price}
+        </p>
+        <button
+          type="button"
+          onClick={() => onBookService(service)}
+          className="rounded-[16px] bg-prime-teal px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-prime-teal/20 transition focus:outline-none focus:ring-4 focus:ring-prime-teal/20 active:scale-95"
+        >
+          Booking
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function ClinicServiceList({
+  services: serviceItems,
+  onBookService,
+}: {
+  services: Service[];
+  onBookService: (service: Service) => void;
+}) {
+  return (
+    <section className="space-y-3">
+      <SectionHeader title="Layanan Klinik" />
+      {serviceItems.length ? (
+        <div className="space-y-3">
+          {serviceItems.map((service) => (
+            <ServiceCard
+              key={service.title}
+              service={service}
+              onBookService={onBookService}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState message="Layanan tidak ditemukan untuk filter saat ini." />
+      )}
+    </section>
+  );
+}
+
+function MiniCart({
+  cartItems,
+  cartQuantity,
+  cartTotal,
+  onDecrease,
+  onIncrease,
+  onRemove,
+  onCheckout,
+}: {
+  cartItems: CartItem[];
+  cartQuantity: number;
+  cartTotal: number;
+  onDecrease: (name: string) => void;
+  onIncrease: (item: CartItem) => void;
+  onRemove: (name: string) => void;
+  onCheckout: () => void;
+}) {
+  const isEmpty = cartQuantity === 0;
+
+  return (
+    <section className="sticky bottom-[calc(104px+env(safe-area-inset-bottom))] z-20 rounded-[26px] border border-prime-gold/20 bg-white/95 p-4 shadow-prime-lift backdrop-blur">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-bold text-prime-black">Keranjang</p>
+          <p className="mt-0.5 text-xs font-medium text-prime-muted">
+            {cartQuantity} item dipilih
+          </p>
+        </div>
+        <span className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-prime-gold-soft text-prime-gold-dark">
+          <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+        </span>
+      </div>
+
+      <div className="mt-3 space-y-2">
+        {cartItems.length ? (
+          cartItems.slice(0, 2).map((item) => (
+            <div
+              key={item.name}
+              className="flex items-center justify-between gap-2 rounded-[18px] bg-[#fff8e8] px-3 py-2"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-xs font-bold text-prime-black">
+                  {item.name}
+                </p>
+                <p className="text-xs text-prime-muted">
+                  {item.price} × {item.quantity}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => onDecrease(item.name)}
+                  className="rounded-lg bg-white p-1.5 text-prime-gold-dark focus:outline-none focus:ring-2 focus:ring-prime-gold/20"
+                  aria-label={`Kurangi ${item.name}`}
+                >
+                  <Minus className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onIncrease(item)}
+                  className="rounded-lg bg-white p-1.5 text-prime-gold-dark focus:outline-none focus:ring-2 focus:ring-prime-gold/20"
+                  aria-label={`Tambah ${item.name}`}
+                >
+                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onRemove(item.name)}
+                  className="rounded-lg bg-rose-50 p-1.5 text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-200"
+                  aria-label={`Hapus ${item.name}`}
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="rounded-[18px] bg-[#fff8e8] px-3 py-3 text-sm font-medium text-prime-muted">
+            Belum ada item di keranjang.
+          </p>
+        )}
+        {cartItems.length > 2 && (
+          <p className="text-xs font-semibold text-prime-gold-dark">
+            +{cartItems.length - 2} item lainnya tersimpan.
+          </p>
+        )}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-prime-gold/10 pt-3">
+        <div>
+          <p className="text-xs text-prime-muted">Total estimasi</p>
+          <p className="text-lg font-extrabold text-prime-black">
+            {formatRupiah(cartTotal)}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onCheckout}
+          disabled={isEmpty}
+          className="inline-flex items-center gap-2 rounded-[16px] bg-prime-gold px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-prime-gold/20 transition focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:scale-95 disabled:cursor-not-allowed disabled:bg-prime-black/15 disabled:text-prime-muted disabled:shadow-none"
+        >
+          <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Checkout
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function PromoCard() {
+  return (
+    <article className="overflow-hidden rounded-[28px] border border-prime-gold/15 bg-white p-4 shadow-prime-card">
+      <div className="flex items-center gap-4">
+        <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-[24px] bg-gradient-to-br from-prime-gold-soft to-prime-teal-soft p-3">
+          <img
+            src={contactLensImage}
+            alt="Gambar promo produk lensa kontak"
+            className="h-full w-full object-contain"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-prime-gold-dark">
+            Promo Hari Ini
+          </p>
+          <h2 className="mt-2 text-lg font-bold leading-snug text-prime-black">
+            Diskon hingga 20% untuk produk pilihan.
+          </h2>
+          <button
+            type="button"
+            className="mt-3 rounded-[14px] bg-prime-gold-soft px-3 py-2 text-xs font-bold text-prime-gold-dark transition hover:bg-prime-cream focus:outline-none focus:ring-4 focus:ring-prime-gold/20"
+          >
+            Lihat Promo
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function BenefitGrid() {
+  return (
+    <section className="space-y-3">
+      <SectionHeader title="Kenapa pilih Marketplace Prime?" />
+      <div className="grid grid-cols-2 gap-3">
+        {benefits.map(({ title, icon: Icon, copy }) => (
+          <article
+            key={title}
+            className="rounded-[22px] border border-white bg-white p-3 shadow-prime-card"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-prime-gold-soft text-prime-gold-dark">
+              <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+            </span>
+            <p className="mt-2 text-sm font-bold text-prime-black">{title}</p>
+            <p className="mt-0.5 text-xs font-medium text-prime-muted">{copy}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RewardVoucherSection() {
+  const [message, setMessage] = useState<string | null>(null);
+  const { getAvailableRewards, redeemReward, user } = useGamificationStore();
+  const rewards = getAvailableRewards(user.userId);
+  const nextReward = useMemo(
+    () =>
+      rewards.find((reward) => user.totalPoints < reward.pointsRequired) ??
+      rewards[rewards.length - 1],
+    [rewards, user.totalPoints],
+  );
+  const progress = nextReward
+    ? Math.min(100, Math.round((user.totalPoints / nextReward.pointsRequired) * 100))
+    : 100;
+
+  const handleRedeem = (rewardId: string) => {
+    const result = redeemReward(user.userId, rewardId);
+    setMessage(result.message);
+    window.setTimeout(() => setMessage(null), 3000);
+  };
+
+  return (
+    <section className="rounded-[28px] border border-prime-gold/15 bg-white p-4 shadow-prime-card">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.16em] text-prime-gold-dark">
+            <Gift className="h-4 w-4" aria-hidden="true" /> Reward & Voucher
+          </p>
+          <h2 className="mt-1 text-lg font-bold text-prime-black">
+            Poin saat ini: {user.totalPoints}
+          </h2>
+        </div>
+        <span className="inline-flex items-center gap-1 rounded-full bg-prime-gold-soft px-3 py-1.5 text-xs font-bold text-prime-gold-dark">
+          <Coins className="h-3.5 w-3.5" aria-hidden="true" /> 120+
+        </span>
+      </div>
+
+      {nextReward && (
+        <div className="mt-4 rounded-[22px] bg-[#fff8e8] p-3">
+          <div className="flex items-center justify-between gap-3 text-xs font-semibold text-prime-muted">
+            <span>Progress ke reward berikutnya</span>
+            <span className="text-prime-gold-dark">{progress}%</span>
+          </div>
+          <div className="mt-2 h-3 overflow-hidden rounded-full bg-white">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-prime-gold to-prime-teal transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {message && (
+        <p className="mt-3 rounded-[18px] bg-prime-gold-soft px-3 py-2 text-xs font-bold text-prime-gold-dark">
+          {message}
+        </p>
+      )}
+
+      <div className="mt-3 space-y-2.5">
+        {rewards.map((reward) => {
+          const enoughPoints = user.totalPoints >= reward.pointsRequired;
+
+          return (
+            <VoucherCard
+              key={reward.id}
+              title={reward.title}
+              description={reward.description}
+              requirement={`Butuh ${reward.pointsRequired} poin • Nilai ${reward.value}`}
+              status={enoughPoints ? 'Tukar Poin' : 'Poin belum cukup'}
+              disabled={!enoughPoints}
+              onRedeem={() => handleRedeem(reward.id)}
+            />
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function VoucherCard({
+  title,
+  description,
+  requirement,
+  status,
+  disabled,
+  onRedeem,
+}: {
+  title: string;
+  description: string;
+  requirement: string;
+  status: string;
+  disabled: boolean;
+  onRedeem: () => void;
+}) {
+  return (
+    <article className="rounded-[20px] border border-prime-gold/10 bg-prime-gold-soft/45 p-3">
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-white text-prime-gold-dark shadow-sm">
+          <Gift className="h-[18px] w-[18px]" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-bold leading-snug text-prime-black">
+            {title}
+          </h3>
+          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-prime-muted">
+            {description}
+          </p>
+          <p className="mt-2 text-xs font-bold text-prime-gold-dark">
+            {requirement}
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onRedeem}
+        className="mt-3 rounded-full bg-prime-gold px-3 py-2 text-xs font-bold text-white transition focus:outline-none focus:ring-4 focus:ring-prime-gold/20 disabled:cursor-not-allowed disabled:bg-prime-black/10 disabled:text-prime-muted"
+      >
+        {status}
+      </button>
+    </article>
+  );
+}
+
+function MarketplaceSupportCard() {
+  return (
+    <section className="rounded-[24px] border border-prime-teal/10 bg-prime-teal-soft p-4 text-center shadow-prime-card">
+      <p className="text-sm font-bold leading-relaxed text-prime-black">
+        Butuh bantuan memilih? Tim Klinik Utama Prime siap membantu Anda 🤍
+      </p>
+      <button
+        type="button"
+        className="mt-3 rounded-[14px] bg-white px-4 py-2 text-xs font-bold text-prime-teal shadow-sm transition focus:outline-none focus:ring-4 focus:ring-prime-teal/20 active:scale-95"
+      >
+        Hubungi Admin
+      </button>
+    </section>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <p className="rounded-[22px] border border-dashed border-prime-gold/25 bg-white px-4 py-5 text-center text-sm font-medium text-prime-muted">
+      {message}
+    </p>
+  );
+}
 
 export function MarketplacePage() {
   const [feedback, setFeedback] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Semua');
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryName>(() => {
+    const storedCategory = readStorage<string>(
+      MARKETPLACE_SELECTED_CATEGORY_KEY,
+      DEFAULT_CATEGORY,
+    );
+    return isCategoryName(storedCategory) ? storedCategory : DEFAULT_CATEGORY;
+  });
+  const [cartItems, setCartItems] = useState<CartItem[]>(() =>
+    readStorage<CartItem[]>(MARKETPLACE_CART_KEY, []),
+  );
+  const [favorites, setFavorites] = useState<string[]>(() =>
+    readStorage<string[]>(MARKETPLACE_FAVORITES_KEY, []),
+  );
   const addPoints = useGamificationStore((state) => state.addPoints);
   const userId = 'patient-001';
+
+  useEffect(() => {
+    window.localStorage.setItem(MARKETPLACE_CART_KEY, JSON.stringify(cartItems));
+  }, [cartItems]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      MARKETPLACE_FAVORITES_KEY,
+      JSON.stringify(favorites),
+    );
+  }, [favorites]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      MARKETPLACE_SELECTED_CATEGORY_KEY,
+      JSON.stringify(selectedCategory),
+    );
+  }, [selectedCategory]);
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
   const filteredProducts = useMemo(
     () =>
       products.filter((product) => {
         const matchesCategory =
-          selectedCategory === 'Semua' || product.category === selectedCategory;
+          selectedCategory === DEFAULT_CATEGORY ||
+          product.category === selectedCategory;
         const matchesSearch =
           !normalizedSearchTerm ||
           [product.name, product.desc, product.badge, product.category].some(
@@ -166,7 +939,8 @@ export function MarketplacePage() {
     () =>
       services.filter((service) => {
         const matchesCategory =
-          selectedCategory === 'Semua' || service.category === selectedCategory;
+          selectedCategory === DEFAULT_CATEGORY ||
+          service.category === selectedCategory;
         const matchesSearch =
           !normalizedSearchTerm ||
           [service.title, service.desc, service.badge, service.category].some(
@@ -186,7 +960,17 @@ export function MarketplacePage() {
     0,
   );
 
-  const addToCart = (item: Pick<CartItem, 'name' | 'price' | 'priceValue'>) => {
+  const showFeedback = (message: string) => {
+    setFeedback(message);
+    window.setTimeout(() => setFeedback(''), 2600);
+  };
+
+  const updateCategory = (category: CategoryName) => {
+    setSelectedCategory(category);
+    showFeedback(`Filter kategori: ${category}`);
+  };
+
+  const addToCart = (item: Pick<CartItem, 'name' | 'price' | 'priceValue' | 'kind'>) => {
     setCartItems((current) => {
       const existingItem = current.find(
         (cartItem) => cartItem.name === item.name,
@@ -202,7 +986,21 @@ export function MarketplacePage() {
 
       return [...current, { ...item, quantity: 1 }];
     });
-    setFeedback(`${item.name} ditambahkan ke keranjang.`);
+    showFeedback(`${item.name} ditambahkan ke keranjang.`);
+  };
+
+  const toggleFavorite = (productName: string) => {
+    setFavorites((current) => {
+      const alreadyFavorite = current.includes(productName);
+      showFeedback(
+        alreadyFavorite
+          ? `${productName} dihapus dari favorit.`
+          : `${productName} disimpan ke favorit.`,
+      );
+      return alreadyFavorite
+        ? current.filter((name) => name !== productName)
+        : [...current, productName];
+    });
   };
 
   const decreaseCartItem = (itemName: string) => {
@@ -219,12 +1017,11 @@ export function MarketplacePage() {
 
   const removeCartItem = (itemName: string) => {
     setCartItems((current) => current.filter((item) => item.name !== itemName));
-    setFeedback(`${itemName} dihapus dari keranjang.`);
+    showFeedback(`${itemName} dihapus dari keranjang.`);
   };
 
   const checkoutCart = () => {
     if (!cartItems.length) {
-      setFeedback('Keranjang masih kosong. Tambahkan produk terlebih dulu.');
       return;
     }
 
@@ -234,387 +1031,79 @@ export function MarketplacePage() {
       POINT_RULES.marketplace_purchase,
       `Checkout marketplace: ${cartItems.map((item) => item.name).join(', ')}`,
     );
-    setFeedback(
+    showFeedback(
       `Checkout ${cartQuantity} item senilai ${formatRupiah(cartTotal)} berhasil dicatat. +20 poin Daily Wins.`,
     );
     setCartItems([]);
   };
 
-  const rewardBooking = (serviceTitle: string) => {
+  const bookService = (service: Service) => {
+    addToCart({
+      name: service.title,
+      price: service.price,
+      priceValue: service.priceValue,
+      kind: 'service',
+    });
     addPoints(
       userId,
       'booking_created',
       POINT_RULES.booking_created,
-      `Booking layanan: ${serviceTitle}`,
+      `Booking layanan: ${service.title}`,
     );
-    setFeedback(`Booking ${serviceTitle} berhasil. +25 poin Daily Wins.`);
+    showFeedback(`Booking ${service.title} tersimpan. +25 poin Daily Wins.`);
   };
 
   return (
-    <section className="space-y-6">
-      <header className="flex items-start justify-between rounded-3xl bg-white px-1 pb-1 pt-2">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-prime-black">
-            Marketplace
-          </h1>
-          <p className="mt-1 text-sm text-prime-black/60">
-            Fokus belanja kebutuhan mata dengan gambar produk jelas
-          </p>
-        </div>
-        <button className="relative rounded-2xl border border-prime-gold/20 bg-prime-cream/50 p-2.5 text-prime-gold shadow-sm">
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500" />
-        </button>
-      </header>
-
-      <div className="flex gap-2">
-        <label className="flex flex-1 items-center gap-2 rounded-2xl border border-prime-gold/20 bg-white px-3 py-3 shadow-sm shadow-prime-gold/10">
-          <Search className="h-4 w-4 text-prime-black/40" />
-          <input
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            className="w-full bg-transparent text-sm text-prime-black/75 outline-none placeholder:text-prime-black/40"
-            placeholder="Cari produk atau layanan mata"
-          />
-        </label>
-        <button
-          type="button"
-          onClick={() =>
-            setSelectedCategory((category) =>
-              category === 'Semua' ? 'Paket Klinik' : 'Semua',
-            )
-          }
-          className="rounded-2xl border border-prime-gold/20 bg-white px-3 text-prime-gold shadow-sm shadow-prime-gold/10"
-          aria-label="Toggle filter layanan klinik"
-        >
-          <Filter className="h-4 w-4" />
-        </button>
-      </div>
+    <section className="space-y-7 pb-8">
+      <MarketplaceHeader />
+      <SearchFilterBar
+        searchTerm={searchTerm}
+        selectedCategory={selectedCategory}
+        onSearchChange={setSearchTerm}
+        onFilterClick={() =>
+          updateCategory(
+            selectedCategory === 'Paket Klinik' ? DEFAULT_CATEGORY : 'Paket Klinik',
+          )
+        }
+      />
 
       {feedback && (
-        <p className="rounded-2xl bg-prime-cream/60 px-3 py-2 text-xs font-semibold text-prime-gold">
+        <p
+          className="rounded-[18px] border border-prime-gold/15 bg-white/90 px-4 py-2.5 text-xs font-bold text-prime-gold-dark shadow-prime-card"
+          role="status"
+        >
           {feedback}
         </p>
       )}
 
-      <article className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-prime-black via-prime-gold to-[#d7bd64] p-5 text-white shadow-lg shadow-prime-gold/20">
-        <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/20 blur-sm" />
-        <div className="absolute -bottom-10 left-8 h-24 w-24 rounded-full bg-prime-cream/60 blur-sm" />
-        <div className="relative grid gap-4 sm:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-3">
-            <h2 className="max-w-[260px] text-lg font-semibold leading-snug">
-              Etalase fokus kebutuhan mata Prime
-            </h2>
-            <p className="text-sm leading-relaxed text-white/90">
-              Produk terpercaya dan layanan profesional untuk kesehatan mata
-              Anda.
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {['Aman & Terpercaya', 'Produk Berkualitas', 'Booking Mudah'].map(
-                (point) => (
-                  <span
-                    key={point}
-                    className="rounded-xl bg-white/20 px-2 py-1.5 text-center text-[11px] font-medium"
-                  >
-                    {point}
-                  </span>
-                ),
-              )}
-            </div>
-          </div>
-          <div className="rounded-3xl bg-white/20 p-2 backdrop-blur-sm">
-            <img
-              src={clinicCheckupImage}
-              alt="Ilustrasi produk dan layanan pemeriksaan mata Prime"
-              className="h-36 w-full rounded-2xl object-cover shadow-lg shadow-prime-gold/10"
-            />
-          </div>
-        </div>
-      </article>
-
-      <section>
-        <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-prime-black">
-            Kategori Cepat
-          </h3>
-          <p className="text-xs text-prime-gold">Pilih sesuai kebutuhan 👁️</p>
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {[
-            { name: 'Semua', icon: Sparkles, image: clinicCheckupImage },
-            ...categories,
-          ].map(({ name, icon: Icon, image }) => (
-            <button
-              key={name}
-              type="button"
-              onClick={() => setSelectedCategory(name)}
-              className={`min-w-[112px] overflow-hidden rounded-2xl border text-center shadow-sm shadow-prime-gold/10 ${
-                selectedCategory === name
-                  ? 'border-prime-gold bg-prime-gold text-white'
-                  : 'border-prime-gold/20 bg-white text-prime-black/75'
-              }`}
-            >
-              <img
-                src={image}
-                alt={`Gambar kategori ${name}`}
-                className="h-16 w-full object-cover"
-              />
-              <div className="p-2">
-                <span
-                  className={`mx-auto flex h-8 w-8 items-center justify-center rounded-xl ${
-                    selectedCategory === name
-                      ? 'bg-white/20 text-white'
-                      : 'bg-prime-cream/50 text-prime-gold'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                </span>
-                <p
-                  className={`mt-1.5 text-xs font-medium ${selectedCategory === name ? 'text-white' : 'text-prime-black/70'}`}
-                >
-                  {name}
-                </p>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-prime-black">
-            Produk Pilihan
-          </h3>
-          <button className="text-xs font-medium text-prime-gold">
-            Lihat semua
-          </button>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {filteredProducts.map(
-            ({ name, desc, price, priceValue, icon: Icon, image, badge }) => (
-              <article
-                key={name}
-                className="overflow-hidden rounded-3xl border border-prime-gold/20 bg-white shadow-sm shadow-prime-gold/10"
-              >
-                <div className="relative">
-                  <img
-                    src={image}
-                    alt={`Foto produk ${name}`}
-                    className="h-32 w-full object-cover"
-                  />
-                  <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold text-prime-gold shadow-sm">
-                    {badge}
-                  </span>
-                  <button className="absolute right-3 top-3 rounded-full bg-white/90 p-1.5 text-prime-black/40 shadow-sm">
-                    <Heart className="h-4 w-4" />
-                  </button>
-                  <span className="absolute bottom-3 left-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 text-prime-gold shadow-sm">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                </div>
-                <div className="p-3">
-                  <p className="text-sm font-semibold leading-snug text-prime-black">
-                    {name}
-                  </p>
-                  <p className="mt-1 text-xs text-prime-black/60">{desc}</p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <p className="text-sm font-semibold text-prime-gold">
-                      {price}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => addToCart({ name, price, priceValue })}
-                      className="rounded-xl bg-prime-gold p-2 text-white shadow-sm shadow-prime-gold/20"
-                      aria-label={`Beli ${name}`}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ),
-          )}
-        </div>
-        {!filteredProducts.length && (
-          <p className="rounded-2xl border border-dashed border-prime-gold/25 bg-white px-3 py-4 text-center text-sm text-prime-black/60">
-            Produk tidak ditemukan. Coba kata kunci atau kategori lain.
-          </p>
-        )}
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="text-base font-semibold text-prime-black">
-          Layanan Klinik
-        </h3>
-        <div className="space-y-2">
-          {filteredServices.map(({ title, desc, price, badge, image }) => (
-            <article
-              key={title}
-              className="rounded-2xl border border-prime-gold/20 bg-white p-3 shadow-sm shadow-prime-gold/10"
-            >
-              <div className="flex items-start gap-3">
-                <img
-                  src={image}
-                  alt={`Gambar layanan ${title}`}
-                  className="h-20 w-20 flex-none rounded-2xl object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <span className="rounded-full bg-prime-cream/50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-prime-gold">
-                    {badge}
-                  </span>
-                  <p className="mt-2 text-sm font-semibold text-prime-black">
-                    {title}
-                  </p>
-                  <p className="mt-1 text-xs text-prime-black/60">{desc}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => rewardBooking(title)}
-                  className="rounded-xl bg-prime-gold px-3 py-2 text-xs font-medium text-white"
-                >
-                  Booking
-                </button>
-              </div>
-              <p className="mt-2 text-sm font-semibold text-prime-gold">
-                {price}
-              </p>
-            </article>
-          ))}
-        </div>
-        {!filteredServices.length && (
-          <p className="rounded-2xl border border-dashed border-prime-gold/25 bg-white px-3 py-4 text-center text-sm text-prime-black/60">
-            Layanan tidak ditemukan untuk filter saat ini.
-          </p>
-        )}
-      </section>
-
-      <section className="rounded-3xl border border-prime-gold/20 bg-white p-4 shadow-sm shadow-prime-gold/10">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-prime-gold">
-              Keranjang
-            </p>
-            <h3 className="text-base font-semibold text-prime-black">
-              {cartQuantity} item dipilih
-            </h3>
-          </div>
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-prime-cream/50 text-prime-gold">
-            <ShoppingCart className="h-5 w-5" />
-          </span>
-        </div>
-        <div className="mt-3 space-y-2">
-          {cartItems.length ? (
-            cartItems.map((item) => (
-              <div
-                key={item.name}
-                className="flex items-center justify-between gap-3 rounded-2xl bg-[#fff8e8] px-3 py-2"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-prime-black">
-                    {item.name}
-                  </p>
-                  <p className="text-xs text-prime-black/60">
-                    {item.price} × {item.quantity}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => decreaseCartItem(item.name)}
-                    className="rounded-lg bg-white p-1.5 text-prime-gold"
-                    aria-label={`Kurangi ${item.name}`}
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => addToCart(item)}
-                    className="rounded-lg bg-white p-1.5 text-prime-gold"
-                    aria-label={`Tambah ${item.name}`}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeCartItem(item.name)}
-                    className="rounded-lg bg-rose-50 p-1.5 text-rose-600"
-                    aria-label={`Hapus ${item.name}`}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="rounded-2xl bg-[#fff8e8] px-3 py-4 text-center text-sm text-prime-black/60">
-              Belum ada item di keranjang.
-            </p>
-          )}
-        </div>
-        <div className="mt-3 flex items-center justify-between border-t border-prime-gold/10 pt-3">
-          <div>
-            <p className="text-xs text-prime-black/60">Total estimasi</p>
-            <p className="text-lg font-semibold text-prime-black">
-              {formatRupiah(cartTotal)}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={checkoutCart}
-            className="inline-flex items-center gap-2 rounded-2xl bg-prime-gold px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-prime-gold/20"
-          >
-            <CheckCircle2 className="h-4 w-4" /> Checkout
-          </button>
-        </div>
-      </section>
-
-      <article className="rounded-3xl bg-gradient-to-r from-prime-black via-prime-gold to-[#d7bd64] p-4 text-white shadow-lg shadow-prime-gold/20">
-        <div className="flex items-center gap-3">
-          <img
-            src={contactLensImage}
-            alt="Gambar promo produk lensa kontak"
-            className="h-20 w-24 rounded-2xl object-cover"
-          />
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-white/80">
-              Promo Hari Ini
-            </p>
-            <p className="mt-1 text-lg font-semibold">
-              Diskon hingga 20% untuk produk pilihan.
-            </p>
-          </div>
-        </div>
-        <button className="mt-3 rounded-xl bg-white px-3 py-2 text-sm font-medium text-prime-gold">
-          Lihat Promo
-        </button>
-      </article>
-
-      <section>
-        <h3 className="text-sm font-semibold text-prime-black">
-          Kenapa pilih Marketplace Prime?
-        </h3>
-        <div className="mt-2 grid grid-cols-3 gap-2">
-          {trustCards.map(({ title, icon: Icon }) => (
-            <article
-              key={title}
-              className="rounded-2xl border border-prime-gold/20 bg-white p-2.5 text-center shadow-sm shadow-prime-gold/10"
-            >
-              <span className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-prime-cream/50 text-prime-gold">
-                <Icon className="h-4 w-4" />
-              </span>
-              <p className="mt-1.5 text-[11px] font-medium leading-snug text-prime-black/70">
-                {title}
-              </p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <RewardSection />
-
-      <p className="text-center text-xs text-prime-black/40">
-        Butuh bantuan memilih? Tim Klinik Utama Prime siap membantu Anda 🤍
-      </p>
+      <MarketplaceHero />
+      <CategoryScroller
+        selectedCategory={selectedCategory}
+        onSelectCategory={updateCategory}
+      />
+      <ProductGrid
+        products={filteredProducts}
+        favorites={favorites}
+        onToggleFavorite={toggleFavorite}
+        onAddToCart={addToCart}
+      />
+      <ClinicServiceList
+        services={filteredServices}
+        onBookService={bookService}
+      />
+      <MiniCart
+        cartItems={cartItems}
+        cartQuantity={cartQuantity}
+        cartTotal={cartTotal}
+        onDecrease={decreaseCartItem}
+        onIncrease={addToCart}
+        onRemove={removeCartItem}
+        onCheckout={checkoutCart}
+      />
+      <PromoCard />
+      <BenefitGrid />
+      <RewardVoucherSection />
+      <MarketplaceSupportCard />
     </section>
   );
 }
