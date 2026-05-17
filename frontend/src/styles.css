@@ -22,3 +22,75 @@ button,
 a {
   -webkit-tap-highlight-color: transparent;
 }
+
+.home-header-card {
+  overflow: visible;
+}
+
+.header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brand-block {
+  width: 170px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  overflow: visible;
+}
+
+.brand-logo {
+  display: block;
+  width: 160px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  object-position: left center;
+  flex-shrink: 0;
+}
+
+.brand-lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 170px;
+  overflow: visible;
+}
+
+.brand-logo-main {
+  display: block;
+  width: 155px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  object-position: left center;
+  flex-shrink: 0;
+}
+
+.brand-tagline {
+  font-size: 10px;
+  line-height: 1.1;
+  color: #9a7a12;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+.notification-button {
+  flex-shrink: 0;
+}
+
+.header-greeting {
+  margin-top: 18px;
+}
+
+.header-greeting h1 {
+  margin: 0;
+}
+
+.header-greeting p {
+  margin-top: 8px;
+}

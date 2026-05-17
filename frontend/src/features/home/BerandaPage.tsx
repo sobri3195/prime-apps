@@ -15,7 +15,7 @@ import {
   Stethoscope,
 } from 'lucide-react';
 import { useState } from 'react';
-import primeLogo from '@/assets/prime-logo.svg';
+import primeLogoMain from '@/assets/prime-logo-main.svg';
 import { DailyWinsCard } from '../gamification/GamificationComponents';
 import { POINT_RULES, useGamificationStore } from '../gamification/gamificationStore';
 
@@ -56,26 +56,26 @@ const quickMenus: QuickMenu[] = [
 function HeaderCard() {
   return (
     <header className="home-header-card rounded-prime-xl border border-prime-line bg-white/95 px-5 py-5 shadow-prime-card">
-      <div className="header-top flex items-center justify-between gap-4">
-        <div className="flex h-[52px] w-[170px] max-w-[calc(100%-64px)] shrink-0 items-center overflow-visible rounded-2xl bg-white px-2 py-1 shadow-[0_10px_24px_rgba(35,31,32,0.04)]">
-          <img
-            src={primeLogo}
-            alt="PRIME Klinik Utama Mata"
-            className="brand-logo block h-[46px] w-full max-w-[154px] object-contain object-left"
-          />
+      <div className="header-top">
+        <div className="brand-block">
+          <div className="brand-lockup" aria-label="PRIME Klinik Utama Mata">
+            <img className="brand-logo-main" src={primeLogoMain} alt="PRIME" />
+            <span className="brand-tagline">Klinik Utama Mata</span>
+          </div>
         </div>
+
         <button
           type="button"
           aria-label="Buka notifikasi"
-          className="notification-button relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-prime-line bg-white text-prime-gold shadow-prime-soft transition duration-200 hover:-translate-y-0.5 hover:bg-prime-cream focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:translate-y-0"
+          className="notification-button relative inline-flex h-12 w-12 items-center justify-center rounded-full border border-prime-line bg-white text-prime-gold shadow-prime-soft transition duration-200 hover:-translate-y-0.5 hover:bg-prime-cream focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:translate-y-0"
         >
           <Bell className="h-5 w-5" aria-hidden="true" />
           <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full border-2 border-white bg-prime-teal" />
         </button>
       </div>
 
-      <div className="header-greeting mt-6 space-y-1.5">
-        <p className="mt-0 text-[26px] font-extrabold leading-tight tracking-[-0.03em] text-prime-ink">Halo, Pasien 👋</p>
+      <div className="header-greeting">
+        <h1 className="text-[26px] font-extrabold leading-tight tracking-[-0.03em] text-prime-ink">Halo, Pasien 👋</h1>
         <p className="max-w-[270px] text-[15px] font-medium leading-6 text-prime-muted">
           Selamat datang. Pantau kesehatan mata Anda dengan tenang hari ini.
         </p>
