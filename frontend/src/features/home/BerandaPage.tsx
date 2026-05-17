@@ -9,6 +9,8 @@ import {
   FileText,
   Glasses,
   HeartPulse,
+  LucideIcon,
+  ShieldCheck,
   Sparkles,
   Stethoscope,
 } from 'lucide-react';
@@ -17,27 +19,188 @@ import primeLogo from '@/assets/prime-logo.svg';
 import { DailyWinsCard } from '../gamification/GamificationComponents';
 import { POINT_RULES, useGamificationStore } from '../gamification/gamificationStore';
 
-const quickActions = [
+type QuickAction = {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  primary: boolean;
+};
+
+type QuickMenu = {
+  title: string;
+  icon: LucideIcon;
+};
+
+const quickActions: QuickAction[] = [
   {
     title: 'Booking Pemeriksaan',
-    description: 'Atur jadwal dokter mata tanpa menunggu lama.',
+    description: 'Pilih jadwal dokter mata dengan alur cepat dan jelas.',
     icon: CalendarCheck2,
     primary: true,
   },
   {
     title: 'Cek AI Mata',
-    description: 'Skrining gejala awal mata dalam hitungan menit.',
+    description: 'Skrining awal keluhan mata sebelum konsultasi.',
     icon: Brain,
     primary: false,
   },
 ];
 
-const quickMenus = [
+const quickMenus: QuickMenu[] = [
   { title: 'Riwayat Pemeriksaan', icon: FileText },
   { title: 'Resep Kacamata', icon: Glasses },
   { title: 'Hasil AI Mata', icon: Eye },
   { title: 'Edukasi Mata', icon: BookOpenText },
 ];
+
+function HeaderCard() {
+  return (
+    <header className="rounded-prime-xl border border-prime-line bg-white/95 px-5 py-5 shadow-prime-card">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="inline-flex rounded-2xl bg-white px-1.5 py-1 shadow-[0_10px_24px_rgba(35,31,32,0.04)]">
+            <img
+              src={primeLogo}
+              alt="PRIME Committed to Care"
+              className="h-[44px] w-[150px] object-contain object-left"
+            />
+          </div>
+          <div className="mt-5 space-y-1.5">
+            <p className="text-[26px] font-extrabold leading-tight tracking-[-0.03em] text-prime-ink">Halo, Pasien 👋</p>
+            <p className="max-w-[250px] text-[15px] font-medium leading-6 text-prime-muted">
+              Selamat datang. Pantau kesehatan mata Anda dengan tenang hari ini.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          aria-label="Buka notifikasi"
+          className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-prime-line bg-white text-prime-gold shadow-prime-soft transition duration-200 hover:-translate-y-0.5 hover:bg-prime-cream focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:translate-y-0"
+        >
+          <Bell className="h-5 w-5" aria-hidden="true" />
+          <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full border-2 border-white bg-prime-teal" />
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function HealthSummaryCard() {
+  return (
+    <article className="rounded-prime-xl border border-prime-line bg-white p-5 shadow-prime-card">
+      <div className="flex items-start gap-3">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-prime-teal-soft text-prime-teal">
+          <Eye className="h-6 w-6" aria-hidden="true" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-prime-gold-soft px-3 py-1 text-[12px] font-bold text-prime-gold-dark">
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            Ringkasan Hari Ini
+          </span>
+          <h1 className="mt-3 text-[21px] font-extrabold leading-7 tracking-[-0.02em] text-prime-ink">
+            Kesehatan mata Anda dalam satu tampilan.
+          </h1>
+          <p className="mt-2 text-[14px] font-medium leading-6 text-prime-muted">
+            Lihat jadwal, antrean, dan rekomendasi ringan agar kunjungan klinik lebih nyaman.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-[22px] border border-prime-teal/10 bg-gradient-to-r from-prime-teal-soft to-white p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-prime-teal shadow-prime-soft">
+            <HeartPulse className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div>
+            <p className="text-[14px] font-bold text-prime-ink">Pengingat 20-20-20</p>
+            <p className="mt-1 text-[13px] font-medium leading-5 text-prime-muted">
+              Setiap 20 menit, lihat objek jauh selama 20 detik untuk membantu mengurangi mata lelah.
+            </p>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function ActionCard({ action, onClick }: { action: QuickAction; onClick: (title: string) => void }) {
+  const Icon = action.icon;
+  const cardClass = action.primary
+    ? 'border-prime-gold-dark bg-prime-gold-dark text-white shadow-prime-gold'
+    : 'border-prime-line bg-white text-prime-ink shadow-prime-card';
+  const iconClass = action.primary
+    ? 'bg-white/20 text-white ring-1 ring-white/25'
+    : 'bg-prime-teal-soft text-prime-teal ring-1 ring-prime-teal/10';
+  const descriptionClass = action.primary ? 'text-white/90' : 'text-prime-muted';
+
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(action.title)}
+      className={`group flex min-h-[168px] flex-col rounded-prime-lg border p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-prime-lift focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:translate-y-0 ${cardClass}`}
+    >
+      <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-[18px] transition group-hover:scale-105 ${iconClass}`}>
+        <Icon className="h-5 w-5" aria-hidden="true" />
+      </span>
+      <span className="text-[15px] font-extrabold leading-5 tracking-[-0.01em]">{action.title}</span>
+      <span className={`mt-2 text-[13px] font-medium leading-5 ${descriptionClass}`}>{action.description}</span>
+      <span className={`mt-auto inline-flex items-center gap-1 pt-4 text-[12px] font-bold ${action.primary ? 'text-white' : 'text-prime-gold-dark'}`}>
+        Mulai
+        <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden="true" />
+      </span>
+    </button>
+  );
+}
+
+function QueueCard() {
+  return (
+    <article className="rounded-prime-xl border border-prime-line bg-white p-5 shadow-prime-card">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-prime-gold-dark">Antrean Hari Ini</p>
+          <p className="mt-3 text-[40px] font-extrabold leading-none tracking-[-0.04em] text-prime-ink">A-017</p>
+          <div className="mt-4 grid gap-2 text-[14px] font-semibold text-prime-muted">
+            <p className="inline-flex items-center gap-2">
+              <Clock3 className="h-4 w-4 text-prime-teal" aria-hidden="true" />
+              Estimasi tunggu ±15 menit
+            </p>
+            <p className="inline-flex w-fit rounded-full bg-prime-gold-soft px-3 py-1 text-[13px] font-bold text-prime-gold-dark">
+              Menunggu Pemeriksaan
+            </p>
+          </div>
+        </div>
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-prime-cream text-prime-gold-dark">
+          <Clock3 className="h-6 w-6" aria-hidden="true" />
+        </div>
+      </div>
+      <button
+        type="button"
+        className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-prime-ink px-4 py-2 text-[14px] font-bold text-white shadow-prime-soft transition duration-200 hover:-translate-y-0.5 hover:bg-prime-black focus:outline-none focus:ring-4 focus:ring-prime-ink/20 active:translate-y-0"
+      >
+        Lihat Detail
+        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </article>
+  );
+}
+
+function AppointmentCard() {
+  return (
+    <article className="rounded-prime-xl border border-prime-line bg-white p-5 shadow-prime-card">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-prime-gold-dark">Jadwal Berikutnya</p>
+          <h2 className="mt-3 text-[18px] font-extrabold tracking-[-0.01em] text-prime-ink">dr. Sp.M</h2>
+          <p className="mt-1.5 text-[14px] font-semibold leading-5 text-prime-muted">Senin, 4 Mei 2026 • 10.30 WIB</p>
+          <p className="mt-2 text-[14px] font-bold text-prime-ink">Pemeriksaan Mata Lengkap</p>
+        </div>
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-prime-teal-soft text-prime-teal">
+          <Stethoscope className="h-6 w-6" aria-hidden="true" />
+        </div>
+      </div>
+    </article>
+  );
+}
 
 export function BerandaPage() {
   const [feedback, setFeedback] = useState('');
@@ -76,116 +239,51 @@ export function BerandaPage() {
   };
 
   return (
-    <section className="space-y-6 text-prime-black">
-      <header className="rounded-[28px] border border-prime-gold/20 bg-white px-4 py-4 shadow-sm shadow-prime-gold/10">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <img
-              src={primeLogo}
-              alt="PRIME Committed to Care"
-              className="h-auto w-[136px] max-w-full object-contain"
-            />
-            <div className="mt-4 space-y-1">
-              <p className="text-2xl font-bold tracking-[-0.02em] text-prime-black">Halo, Pasien 👋</p>
-              <p className="text-sm font-medium text-prime-black/70">Selamat datang di Klinik Utama Prime</p>
-            </div>
-          </div>
-          <button className="relative rounded-2xl border border-prime-gold/20 bg-prime-cream/50 p-2.5 text-prime-gold shadow-sm shadow-prime-gold/10">
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-prime-gold" />
-          </button>
-        </div>
-      </header>
+    <section className="space-y-5 text-prime-ink" aria-label="Beranda pasien PRIME">
+      <HeaderCard />
+      <HealthSummaryCard />
 
-      <article className="relative overflow-hidden rounded-[28px] border border-prime-gold/20 bg-gradient-to-br from-prime-gold via-[#d7bd64] to-prime-cream p-5 text-white shadow-lg shadow-prime-gold/20">
-        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/40 blur-sm" />
-        <div className="absolute -bottom-12 left-8 h-28 w-28 rounded-full bg-white/30 blur-md" />
-        <div className="absolute bottom-0 right-0 h-24 w-24 rounded-tl-full bg-prime-black/5" />
-        <div className="relative space-y-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/25 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-            <Sparkles className="h-3.5 w-3.5" />
-            Ringkasan Kesehatan Mata Hari Ini
-          </span>
-          <p className="max-w-[260px] text-sm font-medium leading-relaxed text-white">
-            Pantau kondisi mata, jadwal pemeriksaan, dan antrean Anda dalam satu aplikasi.
-          </p>
-          <div className="flex items-center gap-3 rounded-2xl border border-white/25 bg-white/20 p-3 backdrop-blur-sm">
-            <div className="rounded-xl bg-white/25 p-2">
-              <HeartPulse className="h-5 w-5" />
-            </div>
-            <p className="text-xs font-medium leading-relaxed text-white">Pengingat ramah: istirahatkan mata 20 detik setiap 20 menit menatap layar.</p>
+      <section aria-labelledby="shortcut-heading">
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-prime-gold-dark">Aksi Cepat</p>
+            <h2 id="shortcut-heading" className="mt-1 text-[18px] font-extrabold tracking-[-0.02em] text-prime-ink">
+              Pilih kebutuhan Anda
+            </h2>
           </div>
         </div>
-      </article>
-
-      <div className="grid grid-cols-2 gap-3.5">
-        {quickActions.map((action) => {
-          const Icon = action.icon;
-
-          return (
-            <button
-              key={action.title}
-              type="button"
-              onClick={() => handleQuickAction(action.title)}
-              className={`flex min-h-[156px] flex-col rounded-[24px] border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
-                action.primary
-                  ? 'border-prime-gold bg-prime-gold text-white shadow-md shadow-prime-gold/20'
-                  : 'border-prime-gold/25 bg-prime-cream/70 text-prime-black shadow-sm shadow-prime-gold/10'
-              }`}
-            >
-              <span className={`mb-3 flex h-10 w-10 items-center justify-center rounded-2xl ${action.primary ? 'bg-white/20 text-white' : 'bg-white text-prime-gold shadow-sm shadow-prime-gold/10'}`}><Icon className="h-5 w-5" /></span>
-              <p className="text-sm font-bold">{action.title}</p>
-              <p className={`mt-2 text-xs font-medium leading-relaxed ${action.primary ? 'text-white/90' : 'text-prime-black/60'}`}>{action.description}</p>
-            </button>
-          );
-        })}
-      </div>
+        <div className="grid grid-cols-2 gap-3.5">
+          {quickActions.map((action) => (
+            <ActionCard key={action.title} action={action} onClick={handleQuickAction} />
+          ))}
+        </div>
+      </section>
 
       {feedback && (
-        <p className="rounded-2xl border border-prime-gold/20 bg-prime-cream/70 px-3 py-2 text-xs font-semibold text-prime-black">{feedback}</p>
+        <p role="status" className="rounded-[20px] border border-prime-teal/15 bg-prime-teal-soft px-4 py-3 text-[13px] font-bold leading-5 text-prime-ink">
+          {feedback}
+        </p>
       )}
 
-      <article className="rounded-[28px] border border-prime-gold/20 bg-white p-4 shadow-sm shadow-prime-gold/10">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-prime-gold">Antrean Hari Ini</p>
-            <p className="mt-2 text-2xl font-bold text-prime-black">A-017</p>
-            <p className="mt-1 text-sm font-medium text-prime-black/60">Estimasi tunggu 15 menit</p>
-            <p className="mt-1 text-xs font-semibold text-prime-gold">Status: Menunggu Pemeriksaan</p>
-          </div>
-          <div className="rounded-2xl bg-prime-cream/75 p-2.5 text-prime-gold">
-            <Clock3 className="h-5 w-5" />
-          </div>
-        </div>
-        <button className="mt-4 inline-flex items-center gap-1 rounded-xl bg-prime-gold px-3 py-2 text-sm font-semibold text-white shadow-sm shadow-prime-gold/20">
-          Lihat Detail
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </article>
+      <QueueCard />
+      <AppointmentCard />
 
-      <article className="rounded-[28px] border border-prime-gold/20 bg-white p-4 shadow-sm shadow-prime-gold/10">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-prime-gold">Jadwal Berikutnya</p>
-            <h2 className="mt-2 text-base font-bold text-prime-black">dr. Sp.M</h2>
-            <p className="mt-1 text-sm font-medium text-prime-black/60">Senin, 4 Mei 2026 • 10.30 WIB</p>
-            <p className="mt-1 text-sm font-semibold text-prime-black/80">Pemeriksaan Mata Lengkap</p>
-          </div>
-          <div className="rounded-2xl bg-prime-cream/75 p-2.5 text-prime-gold">
-            <Stethoscope className="h-5 w-5" />
-          </div>
-        </div>
-      </article>
-
-      <section className="rounded-[28px] border border-prime-gold/20 bg-white p-4 shadow-sm shadow-prime-gold/10">
-        <h3 className="text-sm font-bold text-prime-black">Menu Cepat</h3>
-        <div className="mt-3 grid grid-cols-4 gap-2">
+      <section className="rounded-prime-xl border border-prime-line bg-white p-5 shadow-prime-card" aria-labelledby="quick-menu-heading">
+        <h2 id="quick-menu-heading" className="text-[17px] font-extrabold tracking-[-0.02em] text-prime-ink">
+          Menu Cepat
+        </h2>
+        <div className="mt-4 grid grid-cols-4 gap-2.5">
           {quickMenus.map(({ title, icon: Icon }) => (
-            <button key={title} type="button" onClick={() => handleQuickMenu(title)} className="space-y-2 rounded-2xl border border-prime-gold/20 bg-prime-cream/60 p-2.5 text-center transition hover:bg-prime-cream">
-              <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-white text-prime-gold shadow-sm shadow-prime-gold/10">
-                <Icon className="h-4 w-4" />
+            <button
+              key={title}
+              type="button"
+              onClick={() => handleQuickMenu(title)}
+              className="group rounded-[20px] border border-prime-line bg-prime-surface p-2.5 text-center transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-prime-soft focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:translate-y-0"
+            >
+              <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-prime-gold-dark shadow-[0_8px_18px_rgba(177,151,49,0.10)] transition group-hover:scale-105">
+                <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
               </span>
-              <p className="text-[11px] font-medium leading-snug text-prime-black/70">{title}</p>
+              <span className="mt-2 block text-[11.5px] font-bold leading-snug text-prime-muted">{title}</span>
             </button>
           ))}
         </div>
@@ -193,12 +291,19 @@ export function BerandaPage() {
 
       <DailyWinsCard />
 
-      <section className="rounded-[28px] border border-prime-gold/20 bg-white p-4 shadow-sm shadow-prime-gold/10">
-        <p className="text-xs font-bold uppercase tracking-wide text-prime-gold">Tips Kesehatan Mata</p>
-        <h3 className="mt-2 text-sm font-bold text-prime-black">Cara mencegah mata lelah akibat layar</h3>
-        <p className="mt-2 text-xs font-medium leading-relaxed text-prime-black/60">
-          Atur pencahayaan ruangan, gunakan aturan 20-20-20, dan jaga jarak aman layar agar mata tetap nyaman sepanjang hari.
-        </p>
+      <section className="rounded-prime-xl border border-prime-line bg-white p-5 shadow-prime-card">
+        <div className="flex gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] bg-prime-gold-soft text-prime-gold-dark">
+            <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div>
+            <p className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-prime-gold-dark">Tips Kesehatan Mata</p>
+            <h2 className="mt-2 text-[16px] font-extrabold leading-6 text-prime-ink">Cara mencegah mata lelah akibat layar</h2>
+            <p className="mt-2 text-[13px] font-medium leading-6 text-prime-muted">
+              Atur pencahayaan ruangan, gunakan aturan 20-20-20, dan jaga jarak aman layar agar mata tetap nyaman sepanjang hari.
+            </p>
+          </div>
+        </div>
       </section>
     </section>
   );
