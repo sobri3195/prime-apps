@@ -15,7 +15,6 @@ import {
   Stethoscope,
 } from 'lucide-react';
 import { useState } from 'react';
-import primeLogoMain from '@/assets/prime-logo-main.svg';
 import { DailyWinsCard } from '../gamification/GamificationComponents';
 import { POINT_RULES, useGamificationStore } from '../gamification/gamificationStore';
 
@@ -53,20 +52,27 @@ const quickMenus: QuickMenu[] = [
   { title: 'Edukasi Mata', icon: BookOpenText },
 ];
 
+function PrimeLogo() {
+  return (
+    <div className="prime-logo-lockup" role="img" aria-label="PRIME Klinik Utama Mata">
+      <div className="prime-logo-text">
+        PRIME
+        <span className="prime-logo-mark" aria-hidden="true" />
+      </div>
+      <div className="prime-logo-tagline">Klinik Utama Mata</div>
+    </div>
+  );
+}
+
 function HeaderCard() {
   return (
     <header className="home-header-card rounded-prime-xl border border-prime-line bg-white/95 px-5 py-5 shadow-prime-card">
       <div className="header-top">
-        <div className="brand-block">
-          <div className="brand-lockup" aria-label="PRIME Klinik Utama Mata">
-            <img className="brand-logo-main" src={primeLogoMain} alt="PRIME" />
-            <span className="brand-tagline">Klinik Utama Mata</span>
-          </div>
-        </div>
+        <PrimeLogo />
 
         <button
           type="button"
-          aria-label="Buka notifikasi"
+          aria-label="Notifikasi"
           className="notification-button relative inline-flex h-12 w-12 items-center justify-center rounded-full border border-prime-line bg-white text-prime-gold shadow-prime-soft transition duration-200 hover:-translate-y-0.5 hover:bg-prime-cream focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:translate-y-0"
         >
           <Bell className="h-5 w-5" aria-hidden="true" />
