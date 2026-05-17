@@ -15,6 +15,13 @@ import {
   loadFromStorage,
   removeFromStorage,
   saveToStorage,
+  type BrightnessLevel,
+  type BlurLevel,
+  type EyePhotoAnalysis,
+  type EyePhotoPreview,
+  type PhotoQuality,
+  type RednessLevel,
+  type RiskLevel,
   type ScreeningFormDraft,
   type ScreeningResult,
 } from "@/features/ai-eye/localAiStorage";
@@ -41,11 +48,10 @@ const redFlagOptions = [
   "Keluhan dominan satu mata",
 ];
 
-const levelClasses: Record<ScreeningResult["level"], string> = {
+const levelClasses: Record<RiskLevel, string> = {
   Rendah: "border-emerald-100 bg-emerald-50 text-emerald-700",
   Sedang: "border-amber-100 bg-amber-50 text-amber-700",
-  Tinggi: "border-orange-100 bg-orange-50 text-orange-700",
-  "Darurat / Segera ke dokter": "border-red-100 bg-red-50 text-red-700",
+  Tinggi: "border-red-100 bg-red-50 text-red-700",
 };
 
 function createDraft(
@@ -77,12 +83,36 @@ function isFormReady(form: ScreeningFormDraft) {
 function hasDraftData(form: ScreeningFormDraft) {
   return Boolean(
     form.complaint.trim() ||
-    form.duration.trim() ||
-    form.symptoms.length ||
-    form.redFlags.length ||
-    form.photoPreview ||
-    form.severity !== emptyScreeningForm.severity,
+      form.duration.trim() ||
+      form.symptoms.length ||
+      form.redFlags.length ||
+      form.severity !== emptyScreeningForm.severity,
   );
+}
+
+function getPhotoFindingColor(analysis: EyePhotoAnalysis) {
+  if (analysis.riskLevel === "Tinggi" || analysis.quality === "Kurang jelas") {
+    return "border-red-100 bg-red-50 text-red-700";
+  }
+
+  if (analysis.riskLevel === "Sedang") {
+    return "border-amber-100 bg-amber-50 text-amber-700";
+  }
+
+  return "border-emerald-100 bg-emerald-50 text-emerald-700";
+}
+
+function createImageFromData(imageData: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Gambar tidak bisa dibaca."));
+    image.src = imageData;
+  });
+}
+
+function createLocalId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export function AiEyeScreeningForm() {
@@ -106,13 +136,26 @@ export function AiEyeScreeningForm() {
   const [formMessage, setFormMessage] = useState("");
   const [historyMessage, setHistoryMessage] = useState("");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState("");
-  const [photoPreview, setPhotoPreview] = useState(
-    () => form.photoPreview ?? "",
-  );
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<EyePhotoPreview | null>(() =>
+    loadFromStorage<EyePhotoPreview | null>(
+      AI_STORAGE_KEYS.eyePhotoPreview,
+      null,
+    ),
+  );
+  const [photoAnalysis, setPhotoAnalysis] = useState<EyePhotoAnalysis | null>(
+    () =>
+      loadFromStorage<EyePhotoAnalysis | null>(
+        AI_STORAGE_KEYS.eyePhotoAnalysis,
+        null,
+      ),
+  );
+  const [cameraError, setCameraError] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showResetPhotoChoice, setShowResetPhotoChoice] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const analysisCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
@@ -129,7 +172,14 @@ export function AiEyeScreeningForm() {
 
   useEffect(() => {
     cameraStreamRef.current = cameraStream;
-  }, [cameraStream]);
+
+    if (cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+      void videoRef.current.play().catch(() => {
+        setCameraError("Preview kamera belum bisa diputar. Coba tutup dan nyalakan ulang kamera.");
+      });
+    }
+  }, [cameraStream, isCameraOpen]);
 
   const stopCamera = useCallback(() => {
     const activeStream = cameraStreamRef.current;
@@ -160,11 +210,13 @@ export function AiEyeScreeningForm() {
       updatedAt: new Date().toISOString(),
     }));
     setFormMessage("");
+    setShowResetPhotoChoice(false);
   };
 
   const startCamera = async () => {
     setCameraError("");
     setFormMessage("");
+    setShowResetPhotoChoice(false);
 
     if (
       typeof navigator === "undefined" ||
@@ -174,24 +226,38 @@ export function AiEyeScreeningForm() {
       return;
     }
 
-    try {
-      stopCamera();
+    stopCamera();
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "user",
-        },
-        audio: false,
-      });
+    try {
+      let stream: MediaStream;
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+          },
+          audio: false,
+        });
+      } catch (environmentError) {
+        if (
+          environmentError instanceof DOMException &&
+          (environmentError.name === "NotAllowedError" ||
+            environmentError.name === "SecurityError")
+        ) {
+          throw environmentError;
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user",
+          },
+          audio: false,
+        });
+      }
 
       cameraStreamRef.current = stream;
-      setCameraStream(stream);
       setIsCameraOpen(true);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+      setCameraStream(stream);
     } catch (error) {
       stopCamera();
 
@@ -212,14 +278,16 @@ export function AiEyeScreeningForm() {
   };
 
   const persistPhotoPreview = (imageData: string) => {
-    const updatedAt = new Date().toISOString();
+    const nextPreview = {
+      imageData,
+      createdAt: new Date().toISOString(),
+    };
 
-    setPhotoPreview(imageData);
-    setForm((currentForm) => {
-      const nextForm = { ...currentForm, photoPreview: imageData, updatedAt };
-      saveToStorage(AI_STORAGE_KEYS.screeningForm, nextForm);
-      return nextForm;
-    });
+    setPhotoPreview(nextPreview);
+    setPhotoAnalysis(null);
+    saveToStorage(AI_STORAGE_KEYS.eyePhotoPreview, nextPreview);
+    removeFromStorage(AI_STORAGE_KEYS.eyePhotoAnalysis);
+    setFormMessage("Foto berhasil diambil dan disimpan lokal di perangkat ini.");
   };
 
   const capturePhoto = () => {
@@ -241,7 +309,7 @@ export function AiEyeScreeningForm() {
 
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const imageData = canvas.toDataURL("image/jpeg", 0.72);
+    const imageData = canvas.toDataURL("image/jpeg", 0.7);
 
     if (imageData.length > 1.5 * 1024 * 1024) {
       setFormMessage(
@@ -252,19 +320,173 @@ export function AiEyeScreeningForm() {
     }
 
     persistPhotoPreview(imageData);
-    setFormMessage("Foto berhasil diambil dan disimpan lokal.");
     stopCamera();
   };
 
   const retakePhoto = () => {
-    startCamera();
+    void startCamera();
   };
 
   const removePhoto = () => {
-    setPhotoPreview("");
-    updateForm({ photoPreview: undefined });
+    setPhotoPreview(null);
+    setPhotoAnalysis(null);
     setCameraError("");
-    setFormMessage("Foto lokal sudah dihapus dari form screening.");
+    setFormMessage("Foto lokal dan hasil analisis foto sudah dihapus dari perangkat ini.");
+    removeFromStorage(AI_STORAGE_KEYS.eyePhotoPreview);
+    removeFromStorage(AI_STORAGE_KEYS.eyePhotoAnalysis);
+    setResult(null);
+    removeFromStorage(AI_STORAGE_KEYS.screeningResult);
+  };
+
+  const analyzeEyePhoto = async (imageData: string): Promise<EyePhotoAnalysis> => {
+    const canvas = analysisCanvasRef.current ?? document.createElement("canvas");
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+
+    if (!context) {
+      throw new Error("Canvas browser tidak tersedia untuk analisis lokal.");
+    }
+
+    const image = await createImageFromData(imageData);
+    const targetWidth = 320;
+    const targetHeight = 240;
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+    const pixels = context.getImageData(0, 0, targetWidth, targetHeight).data;
+    let brightnessTotal = 0;
+    let rednessPixels = 0;
+    let sampledPixels = 0;
+    let contrastTotal = 0;
+    let previousBrightness = 0;
+
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index];
+      const green = pixels[index + 1];
+      const blue = pixels[index + 2];
+      const brightness = (red + green + blue) / 3;
+      const redDominance = red - (green + blue) / 2;
+
+      brightnessTotal += brightness;
+
+      if (red > 95 && redDominance > 22 && red > green * 1.15 && red > blue * 1.15) {
+        rednessPixels += 1;
+      }
+
+      if (sampledPixels > 0) {
+        contrastTotal += Math.abs(brightness - previousBrightness);
+      }
+
+      previousBrightness = brightness;
+      sampledPixels += 1;
+    }
+
+    const averageBrightness = brightnessTotal / sampledPixels;
+    const rednessRatio = rednessPixels / sampledPixels;
+    const edgeContrast = contrastTotal / Math.max(sampledPixels - 1, 1);
+
+    const brightnessLevel: BrightnessLevel =
+      averageBrightness < 58
+        ? "Terlalu gelap"
+        : averageBrightness > 218
+          ? "Terlalu terang"
+          : "Normal";
+    const rednessLevel: RednessLevel =
+      rednessRatio > 0.09 ? "Tinggi" : rednessRatio > 0.035 ? "Sedang" : "Rendah";
+    const blurLevel: BlurLevel =
+      edgeContrast < 6 ? "Buram" : edgeContrast < 10 ? "Agak buram" : "Jelas";
+    const quality: PhotoQuality =
+      brightnessLevel !== "Normal" || blurLevel === "Buram"
+        ? "Kurang jelas"
+        : blurLevel === "Agak buram" || rednessLevel === "Sedang"
+          ? "Cukup"
+          : "Baik";
+
+    let riskLevel: RiskLevel = "Rendah";
+    if (quality === "Kurang jelas" || rednessLevel === "Sedang") {
+      riskLevel = "Sedang";
+    }
+    if (rednessLevel === "Tinggi") {
+      riskLevel = "Tinggi";
+    }
+
+    const findings: string[] = [];
+
+    if (rednessLevel === "Tinggi") {
+      findings.push("Terdapat indikasi kemerahan cukup tinggi pada area foto.");
+      findings.push("Kemungkinan iritasi perlu dievaluasi bersama gejala dan pemeriksaan dokter bila keluhan berat.");
+    } else if (rednessLevel === "Sedang") {
+      findings.push("Terdapat indikasi kemerahan pada area foto.");
+    } else {
+      findings.push("Dominasi warna merah pada foto tampak rendah.");
+    }
+
+    if (brightnessLevel === "Terlalu gelap") {
+      findings.push("Foto terlalu gelap. Coba ambil ulang di tempat lebih terang.");
+    } else if (brightnessLevel === "Terlalu terang") {
+      findings.push("Foto terlalu terang sehingga detail area mata dapat berkurang.");
+    } else {
+      findings.push("Pencahayaan foto berada pada rentang normal untuk screening awal.");
+    }
+
+    if (blurLevel === "Buram") {
+      findings.push("Foto kurang jelas. Coba ambil ulang dengan posisi lebih stabil.");
+    } else if (blurLevel === "Agak buram") {
+      findings.push("Foto agak buram, tetapi masih dapat memberi gambaran screening awal terbatas.");
+    } else {
+      findings.push("Foto cukup jelas untuk screening awal.");
+    }
+
+    findings.push("Keluhan kering tidak dapat disimpulkan hanya dari foto; gunakan informasi gejala pada form screening.");
+
+    return {
+      id: createLocalId("eye-photo-analysis"),
+      createdAt: new Date().toISOString(),
+      quality,
+      rednessLevel,
+      brightnessLevel,
+      blurLevel,
+      riskLevel,
+      findings,
+      recommendation:
+        "Jika mata merah disertai nyeri, penglihatan buram, silau berat, atau keluhan memburuk, segera konsultasi ke dokter mata.",
+      disclaimer: "Hasil ini hanya screening awal berbasis foto dan gejala, bukan diagnosis medis.",
+    };
+  };
+
+  const handleAnalyzePhoto = async () => {
+    if (!photoPreview) {
+      setFormMessage("Ambil foto mata terlebih dahulu sebelum analisis lokal.");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setCameraError("");
+    setFormMessage("");
+
+    try {
+      const analysis = await analyzeEyePhoto(photoPreview.imageData);
+      setPhotoAnalysis(analysis);
+      saveToStorage(AI_STORAGE_KEYS.eyePhotoAnalysis, analysis);
+
+      if (analysis.brightnessLevel === "Terlalu gelap") {
+        setFormMessage("Foto terlalu gelap. Coba ambil ulang di tempat lebih terang.");
+      } else if (analysis.blurLevel === "Buram") {
+        setFormMessage("Foto kurang jelas. Coba ambil ulang dengan posisi lebih stabil.");
+      } else if (analysis.quality === "Kurang jelas") {
+        setFormMessage("Foto kurang jelas. Ambil ulang foto dengan pencahayaan yang lebih baik.");
+      } else {
+        setFormMessage("Analisis foto lokal selesai dan tersimpan di perangkat ini.");
+      }
+    } catch (error) {
+      setFormMessage(
+        error instanceof Error
+          ? error.message
+          : "Analisis foto lokal belum berhasil. Coba ambil ulang foto.",
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleSubmit = () => {
@@ -275,11 +497,18 @@ export function AiEyeScreeningForm() {
       return;
     }
 
-    const screeningResult = evaluateEyeScreening(form);
+    const screeningResult = evaluateEyeScreening(form, photoAnalysis);
     setResult(screeningResult);
     saveToStorage(AI_STORAGE_KEYS.screeningResult, screeningResult);
+
+    const nextHistory = [
+      screeningResult,
+      ...history.filter((item) => item.id !== screeningResult.id),
+    ].slice(0, 10);
+    setHistory(nextHistory);
+    saveToStorage(AI_STORAGE_KEYS.screeningHistory, nextHistory);
     setFormMessage(
-      "Hasil Screening Awal berhasil dibuat dan disimpan di perangkat ini.",
+      "Hasil Screening Awal berhasil dibuat, digabungkan dengan analisis foto bila tersedia, dan disimpan di perangkat ini.",
     );
   };
 
@@ -295,15 +524,23 @@ export function AiEyeScreeningForm() {
     setHistoryMessage("Hasil screening ditambahkan ke riwayat lokal.");
   };
 
-  const handleResetForm = () => {
+  const resetFormOnly = () => {
     stopCamera();
     setForm(createDraft());
-    setPhotoPreview("");
     setCameraError("");
     setResult(null);
     setFormMessage("Form dan hasil aktif sudah direset dari perangkat ini.");
     removeFromStorage(AI_STORAGE_KEYS.screeningForm);
     removeFromStorage(AI_STORAGE_KEYS.screeningResult);
+  };
+
+  const handleResetForm = () => {
+    resetFormOnly();
+
+    if (photoPreview || photoAnalysis) {
+      setShowResetPhotoChoice(true);
+      setFormMessage("Form sudah direset. Apakah foto lokal dan analisis foto juga ingin dihapus?");
+    }
   };
 
   const handleClearHistory = () => {
@@ -316,13 +553,13 @@ export function AiEyeScreeningForm() {
     <section className="space-y-4 rounded-3xl border border-prime-gold/20 bg-white p-5 shadow-lg shadow-prime-gold/10">
       <div className="space-y-1">
         <p className="text-xs font-semibold uppercase tracking-wide text-prime-gold">
-          Mode lokal • localStorage
+          Mode lokal • Kamera perangkat • localStorage
         </p>
         <h2 className="text-xl font-semibold text-prime-black">
           AI Screening Mata
         </h2>
         <p className="text-sm leading-relaxed text-prime-black/65">
-          Isi keluhan Anda untuk mendapatkan screening awal.
+          Isi keluhan dan, bila nyaman, ambil foto mata untuk screening awal lokal di browser.
         </p>
       </div>
 
@@ -453,11 +690,10 @@ export function AiEyeScreeningForm() {
             </span>
             <div className="space-y-1">
               <p className="text-sm font-semibold text-prime-black">
-                Ambil Foto Mata (Opsional)
+                Ambil Foto Mata
               </p>
               <p className="text-xs leading-relaxed text-prime-black/65">
-                Nyalakan kamera untuk mengambil foto mata. Foto hanya disimpan
-                lokal di perangkat Anda.
+                Ambil foto mata langsung dari kamera. Foto hanya disimpan lokal di perangkat Anda dan tidak dikirim ke server.
               </p>
             </div>
           </div>
@@ -472,7 +708,7 @@ export function AiEyeScreeningForm() {
             <div className="space-y-3">
               <video
                 ref={videoRef}
-                className="w-full rounded-[18px] border border-white/80 bg-prime-black/10 object-cover shadow-sm aspect-[4/3]"
+                className="aspect-[4/3] w-full rounded-[18px] border border-white/80 bg-prime-black/10 object-cover shadow-sm"
                 playsInline
                 muted
                 autoPlay
@@ -483,7 +719,7 @@ export function AiEyeScreeningForm() {
                   onClick={capturePhoto}
                   className="rounded-2xl bg-prime-gold px-4 py-3 text-sm font-semibold text-white shadow-md shadow-prime-gold/25"
                 >
-                  Ambil Gambar
+                  Ambil Foto
                 </button>
                 <button
                   type="button"
@@ -497,25 +733,33 @@ export function AiEyeScreeningForm() {
           ) : photoPreview ? (
             <div className="space-y-3">
               <img
-                src={photoPreview}
+                src={photoPreview.imageData}
                 alt="Preview foto mata"
-                className="w-full rounded-[18px] border border-white/80 object-cover shadow-sm aspect-[4/3]"
+                className="aspect-[4/3] w-full rounded-[18px] border border-white/80 object-cover shadow-sm"
               />
               <p className="rounded-2xl bg-white/85 px-3 py-2 text-xs font-semibold text-teal-800">
-                Foto berhasil diambil dan disimpan lokal.
+                Foto tersimpan lokal sejak {new Date(photoPreview.createdAt).toLocaleString("id-ID")}.
               </p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <button
+                  type="button"
+                  onClick={handleAnalyzePhoto}
+                  disabled={isAnalyzing}
+                  className="rounded-2xl bg-prime-gold px-4 py-3 text-sm font-semibold text-white shadow-md shadow-prime-gold/25 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isAnalyzing ? "Menganalisis..." : "Analisis Foto"}
+                </button>
                 <button
                   type="button"
                   onClick={retakePhoto}
-                  className="rounded-2xl bg-prime-gold px-4 py-3 text-sm font-semibold text-white shadow-md shadow-prime-gold/25"
+                  className="rounded-2xl border border-prime-gold/25 bg-white/80 px-4 py-3 text-sm font-semibold text-prime-black/70"
                 >
                   Foto Ulang
                 </button>
                 <button
                   type="button"
                   onClick={removePhoto}
-                  className="rounded-2xl border border-prime-gold/25 bg-white/80 px-4 py-3 text-sm font-semibold text-prime-black/70"
+                  className="rounded-2xl border border-red-100 bg-white/80 px-4 py-3 text-sm font-semibold text-red-600"
                 >
                   Hapus Foto
                 </button>
@@ -531,10 +775,70 @@ export function AiEyeScreeningForm() {
             </button>
           )}
 
+          {isAnalyzing && (
+            <p className="rounded-2xl bg-white/85 px-3 py-2 text-xs font-semibold text-teal-800">
+              Menganalisis foto secara lokal...
+            </p>
+          )}
+
+          {photoAnalysis && (
+            <div className="space-y-3 rounded-3xl border border-white/80 bg-white/90 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-prime-gold">
+                    Hasil Analisis Foto
+                  </p>
+                  <h3 className="mt-1 text-base font-semibold text-prime-black">
+                    Screening visual lokal
+                  </h3>
+                </div>
+                <span className={`rounded-full border px-3 py-1 text-xs font-bold ${getPhotoFindingColor(photoAnalysis)}`}>
+                  {photoAnalysis.riskLevel}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+                <div className="rounded-2xl bg-prime-cream/40 p-3">
+                  <p className="font-semibold text-prime-black">Kualitas foto</p>
+                  <p className="mt-1 text-prime-black/65">{photoAnalysis.quality}</p>
+                </div>
+                <div className="rounded-2xl bg-prime-cream/40 p-3">
+                  <p className="font-semibold text-prime-black">Tingkat kemerahan</p>
+                  <p className="mt-1 text-prime-black/65">{photoAnalysis.rednessLevel}</p>
+                </div>
+                <div className="rounded-2xl bg-prime-cream/40 p-3">
+                  <p className="font-semibold text-prime-black">Pencahayaan</p>
+                  <p className="mt-1 text-prime-black/65">{photoAnalysis.brightnessLevel}</p>
+                </div>
+                <div className="rounded-2xl bg-prime-cream/40 p-3">
+                  <p className="font-semibold text-prime-black">Ketajaman</p>
+                  <p className="mt-1 text-prime-black/65">{photoAnalysis.blurLevel}</p>
+                </div>
+                <div className="rounded-2xl bg-prime-cream/40 p-3">
+                  <p className="font-semibold text-prime-black">Level risiko awal</p>
+                  <p className="mt-1 text-prime-black/65">{photoAnalysis.riskLevel}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-prime-black">Temuan</p>
+                <ul className="mt-2 space-y-1 text-sm leading-relaxed text-prime-black/70">
+                  {photoAnalysis.findings.map((finding) => (
+                    <li key={finding}>• {finding}</li>
+                  ))}
+                </ul>
+              </div>
+              <p className="rounded-2xl bg-teal-50 px-3 py-2 text-sm leading-relaxed text-teal-800">
+                {photoAnalysis.recommendation}
+              </p>
+              <p className="text-xs leading-relaxed text-prime-black/55">
+                {photoAnalysis.disclaimer}
+              </p>
+            </div>
+          )}
+
           <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
+          <canvas ref={analysisCanvasRef} className="hidden" aria-hidden="true" />
           <p className="text-[11px] leading-relaxed text-prime-black/55">
-            Foto hanya digunakan untuk screening awal di perangkat ini dan tidak
-            dikirim ke server.
+            Foto dan hasil analisis hanya disimpan di perangkat ini menggunakan localStorage dan tidak dikirim ke server.
           </p>
         </div>
       </div>
@@ -543,6 +847,39 @@ export function AiEyeScreeningForm() {
         <p className="rounded-2xl bg-prime-cream/50 px-3 py-2 text-sm font-medium text-prime-black/70">
           {formMessage}
         </p>
+      )}
+
+      {showResetPhotoChoice && (
+        <div className="rounded-3xl border border-prime-gold/20 bg-prime-cream/30 p-4">
+          <p className="text-sm font-semibold text-prime-black">
+            Foto lokal masih tersimpan. Ingin hapus juga?
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-prime-black/60">
+            Pilihan ini tampil inline tanpa popup. Jika dihapus, preview dan hasil analisis foto juga hilang dari localStorage.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                removePhoto();
+                setShowResetPhotoChoice(false);
+              }}
+              className="rounded-2xl bg-red-500 px-4 py-3 text-sm font-semibold text-white"
+            >
+              Hapus foto juga
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowResetPhotoChoice(false);
+                setFormMessage("Foto lokal tetap disimpan di perangkat ini.");
+              }}
+              className="rounded-2xl border border-prime-gold/25 bg-white px-4 py-3 text-sm font-semibold text-prime-black/70"
+            >
+              Simpan foto
+            </button>
+          </div>
+        </div>
       )}
 
       <div className="grid grid-cols-2 gap-3">
@@ -581,25 +918,24 @@ export function AiEyeScreeningForm() {
               Menunggu Form
             </p>
             <p className="mt-1 text-sm leading-relaxed text-prime-black/65">
-              Lengkapi form screening untuk melihat triase awal berbasis red
-              flag, kombinasi gejala, dan kualitas data.
+              Lengkapi form screening untuk melihat triase awal berbasis red flag, kombinasi gejala, tingkat keluhan, dan analisis foto lokal bila tersedia.
             </p>
           </div>
         ) : (
           <div className="mt-4 space-y-3">
             <div
-              className={`rounded-2xl border p-4 ${levelClasses[result.level]}`}
+              className={`rounded-2xl border p-4 ${levelClasses[result.finalRiskLevel]}`}
             >
               <p className="text-xs font-semibold uppercase tracking-wide">
-                Level prioritas
+                Level risiko akhir
               </p>
-              <p className="mt-1 text-xl font-bold">{result.level}</p>
+              <p className="mt-1 text-xl font-bold">{result.finalRiskLevel}</p>
             </div>
             <div className="rounded-2xl bg-white p-4 text-sm leading-relaxed text-prime-black/70">
               <p className="font-semibold text-prime-black">
                 Ringkasan keluhan
               </p>
-              <p className="mt-1">{result.summary}</p>
+              <p className="mt-1">{result.finalSummary}</p>
             </div>
             <div className="rounded-2xl bg-white p-4">
               <p className="text-sm font-semibold text-prime-black">
@@ -613,6 +949,9 @@ export function AiEyeScreeningForm() {
             </div>
             <p className="rounded-2xl bg-white px-4 py-3 text-sm leading-relaxed text-prime-black/75">
               {result.recommendation}
+            </p>
+            <p className="rounded-2xl bg-white px-4 py-3 text-xs leading-relaxed text-prime-black/55">
+              {result.disclaimer}
             </p>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -668,8 +1007,8 @@ export function AiEyeScreeningForm() {
                 key={item.id}
                 className="rounded-2xl bg-prime-cream/30 p-3 text-xs text-prime-black/65"
               >
-                <p className="font-semibold text-prime-black">{item.level}</p>
-                <p className="mt-1 line-clamp-2">{item.summary}</p>
+                <p className="font-semibold text-prime-black">{item.finalRiskLevel}</p>
+                <p className="mt-1 line-clamp-2">{item.finalSummary}</p>
               </article>
             ))}
           </div>

@@ -1,11 +1,36 @@
 export const AI_STORAGE_KEYS = {
+  eyePhotoPreview: "prime_ai_eye_photo_preview",
+  eyePhotoAnalysis: "prime_ai_eye_photo_analysis",
   screeningForm: "prime_ai_screening_form",
   screeningResult: "prime_ai_screening_result",
   screeningHistory: "prime_ai_screening_history",
   cekBotMessages: "prime_cekbot_messages",
 } as const;
 
-export type ScreeningLevel = "Rendah" | "Sedang" | "Tinggi" | "Darurat / Segera ke dokter";
+export type RiskLevel = "Rendah" | "Sedang" | "Tinggi";
+export type PhotoQuality = "Baik" | "Cukup" | "Kurang jelas";
+export type RednessLevel = "Rendah" | "Sedang" | "Tinggi";
+export type BrightnessLevel = "Normal" | "Terlalu gelap" | "Terlalu terang";
+export type BlurLevel = "Jelas" | "Agak buram" | "Buram";
+export type ScreeningLevel = RiskLevel;
+
+export type EyePhotoPreview = {
+  imageData: string;
+  createdAt: string;
+};
+
+export type EyePhotoAnalysis = {
+  id: string;
+  createdAt: string;
+  quality: PhotoQuality;
+  rednessLevel: RednessLevel;
+  brightnessLevel: BrightnessLevel;
+  blurLevel: BlurLevel;
+  riskLevel: RiskLevel;
+  findings: string[];
+  recommendation: string;
+  disclaimer: string;
+};
 
 export type ScreeningFormDraft = {
   complaint: string;
@@ -13,18 +38,22 @@ export type ScreeningFormDraft = {
   symptoms: string[];
   severity: number;
   redFlags: string[];
-  photoPreview?: string;
   updatedAt: string;
 };
 
 export type ScreeningResult = {
   id: string;
   createdAt: string;
-  level: ScreeningLevel;
-  summary: string;
+  source: "form_photo_local";
+  formSnapshot: ScreeningFormDraft;
+  photoAnalysis: EyePhotoAnalysis | null;
+  finalRiskLevel: RiskLevel;
+  finalSummary: string;
   reasons: string[];
   recommendation: string;
-  formSnapshot: ScreeningFormDraft;
+  disclaimer: string;
+  level: ScreeningLevel;
+  summary: string;
 };
 
 export type CekBotMessage = {
@@ -84,59 +113,86 @@ function raiseLevel(current: number, minimum: number) {
   return Math.max(current, minimum);
 }
 
-function getLevelFromScore(score: number): ScreeningLevel {
-  if (score >= 4) return "Darurat / Segera ke dokter";
+function getRiskFromScore(score: number): RiskLevel {
   if (score >= 3) return "Tinggi";
   if (score >= 2) return "Sedang";
   return "Rendah";
 }
 
-export function evaluateEyeScreening(form: ScreeningFormDraft): ScreeningResult {
+function getScoreFromRisk(riskLevel: RiskLevel) {
+  if (riskLevel === "Tinggi") return 3;
+  if (riskLevel === "Sedang") return 2;
+  return 1;
+}
+
+function hasPainBlurOrGlare(symptoms: string[], redFlags: string[]) {
+  return (
+    symptoms.includes("nyeri") ||
+    symptoms.includes("buram") ||
+    symptoms.includes("silau") ||
+    redFlags.some((flag) => flag.includes("buram") || flag.includes("silau"))
+  );
+}
+
+export function evaluateEyeScreening(
+  form: ScreeningFormDraft,
+  photoAnalysis: EyePhotoAnalysis | null = null,
+): ScreeningResult {
   const symptoms = form.symptoms.map((symptom) => symptom.toLowerCase());
   const redFlags = form.redFlags.map((flag) => flag.toLowerCase());
   const reasons: string[] = [];
   let score = form.severity >= 5 ? 2 : 1;
 
   const hasEmergencySignal = redFlags.some(
-    (flag) => flag.includes("penglihatan turun mendadak") || flag.includes("trauma") || flag.includes("percikan zat"),
+    (flag) =>
+      flag.includes("penglihatan turun mendadak") ||
+      flag.includes("trauma") ||
+      flag.includes("percikan zat"),
   );
-  const hasUrgentRedFlag = hasEmergencySignal || redFlags.some((flag) => flag.includes("sakit kepala hebat"));
+  const hasUrgentRedFlag =
+    hasEmergencySignal ||
+    redFlags.some((flag) => flag.includes("sakit kepala hebat"));
 
   if (hasUrgentRedFlag) {
-    score = raiseLevel(score, hasEmergencySignal && form.severity >= 8 ? 4 : 3);
-    reasons.push("Terdapat red flag utama seperti penurunan penglihatan mendadak, trauma/zat kimia, atau sakit kepala hebat disertai mual/muntah.");
+    score = raiseLevel(score, 3);
+    reasons.push(
+      "Terdapat red flag utama seperti penurunan penglihatan mendadak, trauma/zat kimia, atau sakit kepala hebat disertai mual/muntah sehingga perlu evaluasi dokter segera.",
+    );
   }
 
-  const hasSeverePain = form.severity >= 8 || symptoms.includes("nyeri") && form.severity >= 7;
+  if (form.severity >= 8) {
+    score = raiseLevel(score, 3);
+    reasons.push("Tingkat keluhan 8/10 atau lebih sehingga risiko minimal tinggi.");
+  }
+
+  const hasSeverePain = symptoms.includes("nyeri") && form.severity >= 7;
   if (hasSeverePain) {
     score = raiseLevel(score, 3);
-    reasons.push("Tingkat keluhan tinggi atau nyeri berat sehingga prioritas minimal tinggi.");
+    reasons.push("Nyeri dengan tingkat keluhan tinggi perlu evaluasi dokter lebih cepat.");
   }
 
-  const hasContactLensRisk = redFlags.some((flag) => flag.includes("lensa kontak")) &&
-    (symptoms.includes("nyeri") || symptoms.includes("buram") || symptoms.includes("silau") || redFlags.some((flag) => flag.includes("buram") || flag.includes("silau")));
+  const hasContactLensRisk =
+    redFlags.some((flag) => flag.includes("lensa kontak")) &&
+    hasPainBlurOrGlare(symptoms, redFlags);
   if (hasContactLensRisk) {
     score = raiseLevel(score, 3);
     reasons.push("Penggunaan lensa kontak disertai nyeri/buram/silau perlu evaluasi lebih cepat.");
   }
 
-  const hasMediumFlag = redFlags.some(
-    (flag) =>
-      flag.includes("pandangan buram") ||
-      flag.includes("silau") ||
-      flag.includes("kotoran mata") ||
-      flag.includes("satu mata"),
-  ) || symptoms.includes("buram") || symptoms.includes("silau");
+  const hasMediumFlag =
+    redFlags.some(
+      (flag) =>
+        flag.includes("pandangan buram") ||
+        flag.includes("silau") ||
+        flag.includes("kotoran mata") ||
+        flag.includes("satu mata"),
+    ) ||
+    symptoms.includes("buram") ||
+    symptoms.includes("silau");
 
   if (hasMediumFlag) {
     score = raiseLevel(score, 2);
     reasons.push("Ada buram, silau, keluhan dominan satu mata, atau kotoran mata berlebih sehingga prioritas minimal sedang.");
-  }
-
-  const allergyLikePattern = symptoms.includes("mata merah") && symptoms.includes("gatal") && symptoms.includes("berair") && !hasUrgentRedFlag && form.severity <= 4;
-  if (allergyLikePattern) {
-    score = Math.max(score, 1);
-    reasons.push("Kombinasi mata merah, gatal, dan berair dengan tingkat ringan tanpa red flag cenderung prioritas rendah hingga sedang untuk screening awal.");
   }
 
   if (form.severity >= 5 && form.severity < 8) {
@@ -144,20 +200,60 @@ export function evaluateEyeScreening(form: ScreeningFormDraft): ScreeningResult 
     reasons.push("Tingkat keluhan sedang sehingga disarankan pemantauan ketat dan konsultasi bila tidak membaik.");
   }
 
+  if (photoAnalysis) {
+    score = raiseLevel(score, getScoreFromRisk(photoAnalysis.riskLevel));
+    reasons.push(
+      `Analisis foto lokal menunjukkan kualitas ${photoAnalysis.quality.toLowerCase()}, kemerahan ${photoAnalysis.rednessLevel.toLowerCase()}, pencahayaan ${photoAnalysis.brightnessLevel.toLowerCase()}, dan ketajaman ${photoAnalysis.blurLevel.toLowerCase()}.`,
+    );
+
+    if (
+      photoAnalysis.rednessLevel === "Tinggi" &&
+      hasPainBlurOrGlare(symptoms, redFlags)
+    ) {
+      score = raiseLevel(score, 2);
+      reasons.push("Kemerahan tinggi pada foto disertai nyeri/buram/silau sehingga risiko minimal sedang.");
+    }
+
+    if (
+      photoAnalysis.quality === "Kurang jelas" ||
+      photoAnalysis.brightnessLevel !== "Normal" ||
+      photoAnalysis.blurLevel === "Buram"
+    ) {
+      reasons.push("Foto kurang jelas. Ambil ulang foto dengan pencahayaan yang lebih baik sebelum mengandalkan hasil visual.");
+    }
+  }
+
   if (reasons.length === 0) {
     reasons.push("Tidak ada red flag utama yang dipilih dan tingkat keluhan masih ringan pada data yang diisi.");
   }
 
-  const summary = `Keluhan utama: ${form.complaint}. Durasi: ${form.duration}. Gejala: ${form.symptoms.length ? form.symptoms.join(", ") : "belum dipilih"}. Tingkat keluhan: ${form.severity}/10.`;
+  const finalRiskLevel = getRiskFromScore(score);
+  const finalSummary = `Keluhan utama: ${form.complaint || "belum diisi"}. Durasi: ${form.duration || "belum diisi"}. Gejala: ${form.symptoms.length ? form.symptoms.join(", ") : "belum dipilih"}. Tingkat keluhan: ${form.severity}/10. Foto: ${photoAnalysis ? `kualitas ${photoAnalysis.quality}, kemerahan ${photoAnalysis.rednessLevel}` : "belum dianalisis"}.`;
+  const recommendation =
+    finalRiskLevel === "Tinggi"
+      ? "Segera konsultasi ke dokter mata, terutama bila ada nyeri berat, penglihatan buram/menurun, silau berat, trauma, paparan zat kimia, atau keluhan memburuk."
+      : finalRiskLevel === "Sedang"
+        ? "Pantau keluhan dengan ketat dan pertimbangkan konsultasi dokter mata bila keluhan menetap, memburuk, atau mengganggu aktivitas."
+        : "Lakukan perawatan mata umum dan pantau keluhan. Jika muncul red flag atau keluhan memburuk, konsultasi ke dokter mata.";
+  const disclaimer = "Hasil ini hanya screening awal berbasis foto dan gejala, bukan diagnosis medis.";
 
   return {
     id: `screening-${Date.now()}`,
     createdAt: new Date().toISOString(),
-    level: getLevelFromScore(score),
-    summary,
+    source: "form_photo_local",
+    formSnapshot: {
+      ...form,
+      symptoms: getUniqueValues(form.symptoms),
+      redFlags: getUniqueValues(form.redFlags),
+    },
+    photoAnalysis,
+    finalRiskLevel,
+    finalSummary,
     reasons: getUniqueValues(reasons),
-    recommendation: "Segera konsultasi ke dokter mata jika keluhan memburuk atau muncul red flag. Hasil ini hanya untuk edukasi dan screening awal, bukan diagnosis final.",
-    formSnapshot: { ...form, symptoms: getUniqueValues(form.symptoms), redFlags: getUniqueValues(form.redFlags) },
+    recommendation,
+    disclaimer,
+    level: finalRiskLevel,
+    summary: finalSummary,
   };
 }
 
