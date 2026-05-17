@@ -94,3 +94,12 @@ a {
 .header-greeting p {
   margin-top: 8px;
 }
+
+.marketplace-scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.marketplace-scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
