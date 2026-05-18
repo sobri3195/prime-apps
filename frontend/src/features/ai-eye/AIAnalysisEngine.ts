@@ -20,7 +20,6 @@ export type AIAnalysisInput = {
   selectedSymptoms: string[];
   duration: DurationOption | "";
   painScore: number;
-  medicalHistory: string[];
   cameraResult?: {
     imageQuality: ImageQuality | null;
     selectedEye: SelectedEye;
@@ -31,107 +30,94 @@ export type AIAnalysisInput = {
 export type AIAnalysisResult = {
   riskLevel: RiskLevel;
   riskScore: number;
-  categories: string[];
   summary: string;
-  patientComplaintSummary: string;
+  cameraSummary: string;
+  possibleCategories: string[];
+  explanation: string;
   recommendation: string;
-  safetyNote: string;
-  ctas: string[];
-  shouldBookDoctor: boolean;
-  detectedSignals: string[];
-  cameraSectionNote?: string;
+  ctaPrimary: string;
+  ctaSecondary: string;
 };
 
 export const MEDICAL_DISCLAIMER =
-  "Kamera AI Mata hanya membantu screening visual awal. Hasil ini bukan diagnosis medis final dan tidak menggantikan pemeriksaan dokter mata.";
-export const PRIVACY_MESSAGE = "Data kamera digunakan untuk screening awal dan tidak boleh dipakai untuk kondisi gawat darurat.";
+  "AI Mata hanya digunakan untuk edukasi dan screening awal, bukan pengganti diagnosis dokter. Untuk hasil akurat, silakan konsultasi langsung dengan dokter mata.";
+export const PRIVACY_MESSAGE =
+  "Data dan foto yang Anda masukkan hanya digunakan untuk membantu screening awal. Jangan gunakan fitur ini untuk kondisi gawat darurat.";
 
-const unique = (values: string[]) => Array.from(new Set(values.filter(Boolean)));
+const redFlags = [
+  "Penglihatan mendadak menurun",
+  "Nyeri mata",
+  "Riwayat trauma mata",
+  "Melihat kilatan cahaya",
+  "Mata merah+buram",
+  "Lensa kontak + merah/nyeri",
+  "Diabetes + buram",
+];
 
-export function calculateRiskScore(baseSignals: string[], painScore: number, hasEmergencySignal: boolean) {
-  let score = Math.min(100, baseSignals.length * 8 + painScore * 4);
-  if (hasEmergencySignal) score = Math.max(score, 85);
-  return score;
+export function detectRedFlags(selectedSymptoms: string[], painScore: number, complaintText: string) {
+  const txt = `${selectedSymptoms.join(" ")} ${complaintText}`.toLowerCase();
+  return (
+    selectedSymptoms.includes("Penglihatan mendadak menurun") ||
+    selectedSymptoms.includes("Riwayat trauma mata") ||
+    selectedSymptoms.includes("Melihat kilatan cahaya") ||
+    (selectedSymptoms.includes("Mata merah") && selectedSymptoms.includes("Pandangan buram")) ||
+    painScore >= 8 ||
+    txt.includes("tirai")
+  );
 }
 
-export function mergeCameraResultWithSymptoms(input: AIAnalysisInput, detectedSignals: string[]) {
-  const mergedSignals = [...detectedSignals];
-  let scoreBoost = 0;
-  const notes: string[] = [];
+export function calculateRiskScore(input: AIAnalysisInput, hasRedFlag: boolean) {
+  let score = input.selectedSymptoms.length * 7 + input.painScore * 4;
+  if (input.duration === "Lebih dari 1 minggu") score += 8;
+  if (input.cameraResult?.analysis?.rednessDetected) score += 6;
+  if (input.cameraResult?.analysis?.swellingDetected) score += 6;
+  if (input.cameraResult?.analysis?.dischargeDetected) score += 8;
+  if (input.cameraResult?.imageQuality === "poor") score -= 8;
+  if (hasRedFlag) score = Math.max(score, 85);
+  return Math.min(100, Math.max(score, 0));
+}
 
-  const quality = input.cameraResult?.imageQuality;
-  const analysis = input.cameraResult?.analysis;
-
-  if (!analysis || !quality) return { mergedSignals, scoreBoost, notes };
-  if (quality === "poor") {
-    notes.push("Visual kamera tidak dapat dianalisis optimal karena kualitas foto kurang.");
-    return { mergedSignals, scoreBoost, notes };
-  }
-
-  if (analysis.rednessDetected) mergedSignals.push("Mata merah (kamera)");
-  if (analysis.swellingDetected) mergedSignals.push("Bengkak kelopak (kamera)");
-  if (analysis.dischargeDetected) mergedSignals.push("Keluar kotoran mata (kamera)");
-
-  const hasPain = input.painScore >= 4 || input.selectedSymptoms.includes("Nyeri mata");
-  if (analysis.rednessDetected && hasPain) scoreBoost += 8;
-  if (analysis.swellingDetected && hasPain) scoreBoost += 8;
-  if (analysis.dischargeDetected) scoreBoost += 10;
-
-  notes.push(analysis.visualNote);
-  return { mergedSignals: unique(mergedSignals), scoreBoost, notes };
+export function generateRecommendation(riskLevel: RiskLevel) {
+  if (riskLevel === "Darurat") return { recommendation: "Segera ke dokter mata atau IGD.", ctaPrimary: "Hubungi Klinik", ctaSecondary: "Cari Bantuan Medis Segera" };
+  if (riskLevel === "Tinggi") return { recommendation: "Perlu evaluasi dokter mata sesegera mungkin.", ctaPrimary: "Booking Dokter Mata", ctaSecondary: "Lihat Jadwal Terdekat" };
+  if (riskLevel === "Sedang") return { recommendation: "Disarankan pemeriksaan terjadwal untuk konfirmasi.", ctaPrimary: "Simpan Hasil Screening", ctaSecondary: "Booking Pemeriksaan" };
+  return { recommendation: "Lanjutkan perawatan mata harian dan observasi.", ctaPrimary: "Mulai 20-20-20", ctaSecondary: "Baca Tips Mata Sehat" };
 }
 
 export function analyzeEyeScreening(input: AIAnalysisInput): AIAnalysisResult {
-  const combinedText = `${input.complaintText} ${input.selectedSymptoms.join(" ")}`.toLowerCase();
-  const signals = unique(input.selectedSymptoms);
-
-  if (combinedText.includes("buram")) signals.push("Pandangan buram");
-  if (combinedText.includes("merah")) signals.push("Mata merah");
-  if (combinedText.includes("trauma")) signals.push("Riwayat trauma mata");
-  if (combinedText.includes("kilatan") || combinedText.includes("tirai")) signals.push("Melihat kilatan cahaya");
-
-  const emergency =
-    signals.includes("Penglihatan mendadak menurun") ||
-    signals.includes("Riwayat trauma mata") ||
-    signals.includes("Melihat kilatan cahaya") ||
-    (signals.includes("Mata merah") && signals.includes("Pandangan buram")) ||
-    input.painScore >= 8 ||
-    (input.medicalHistory.includes("Diabetes") && signals.includes("Pandangan buram"));
-
-  const mergedCamera = mergeCameraResultWithSymptoms(input, signals);
-  const finalSignals = unique(mergedCamera.mergedSignals);
-  const categories = unique([
-    finalSignals.some((s) => s.includes("merah")) ? "Iritasi / inflamasi" : "",
-    finalSignals.some((s) => s.includes("buram")) ? "Gangguan visual perlu evaluasi" : "",
-    finalSignals.some((s) => s.includes("kotoran")) ? "Kemungkinan infeksi mata" : "",
-    finalSignals.some((s) => s.includes("trauma")) ? "Trauma mata" : "",
-  ]).filter(Boolean);
-
-  let score = calculateRiskScore(finalSignals, input.painScore, emergency) + mergedCamera.scoreBoost;
-  score = Math.min(score, 100);
+  const hasRedFlag = detectRedFlags(input.selectedSymptoms, input.painScore, input.complaintText);
+  const riskScore = calculateRiskScore(input, hasRedFlag);
 
   let riskLevel: RiskLevel = "Rendah";
-  if (emergency || score >= 85) riskLevel = "Darurat";
-  else if (score >= 65) riskLevel = "Tinggi";
-  else if (score >= 35) riskLevel = "Sedang";
+  if (hasRedFlag || riskScore >= 85) riskLevel = "Darurat";
+  else if (riskScore >= 65) riskLevel = "Tinggi";
+  else if (riskScore >= 35) riskLevel = "Sedang";
 
-  const cameraSectionNote = mergedCamera.notes.join(" ") || undefined;
+  const possibleCategories = [
+    input.selectedSymptoms.includes("Mata merah") ? "Iritasi / inflamasi" : "",
+    input.selectedSymptoms.includes("Keluar kotoran mata") ? "Kemungkinan infeksi mata" : "",
+    input.selectedSymptoms.includes("Pandangan buram") ? "Gangguan visual perlu evaluasi" : "",
+  ].filter(Boolean);
+
+  const cameraSummary = input.cameraResult?.analysis
+    ? `${input.cameraResult.analysis.visualNote} Kualitas foto: ${input.cameraResult.imageQuality ?? "tidak ada"}.`
+    : "Tidak ada foto kamera yang digunakan pada screening ini.";
+
+  const explanation = hasRedFlag
+    ? `Terdapat red flag (${redFlags.join(", ")}) yang meningkatkan prioritas pemeriksaan langsung.`
+    : "Skor dihitung dari gejala, durasi, tingkat nyeri, dan temuan visual kamera (jika ada).";
+
+  const { recommendation, ctaPrimary, ctaSecondary } = generateRecommendation(riskLevel);
 
   return {
     riskLevel,
-    riskScore: score,
-    categories: categories.length ? categories : ["Iritasi ringan"],
-    summary: `Berdasarkan kombinasi keluhan, gejala, faktor risiko, dan hasil visual kamera, skor risiko awal Anda adalah ${score}/100 (${riskLevel}).`,
-    patientComplaintSummary: `${finalSignals.join(", ") || "Keluhan umum"}; durasi ${input.duration || "belum dipilih"}; nyeri ${input.painScore}/10.`,
-    recommendation:
-      riskLevel === "Darurat"
-        ? "Segera ke dokter mata/IGD untuk evaluasi langsung."
-        : "Lanjutkan pemantauan dan pertimbangkan konsultasi dokter mata untuk konfirmasi diagnosis.",
-    safetyNote:
-      "AI tidak menetapkan diagnosis final, tidak meresepkan obat, dan tidak menggantikan pemeriksaan dokter mata langsung.",
-    ctas: riskLevel === "Darurat" ? ["Ke IGD Sekarang"] : ["Booking Dokter Mata", "Lihat Edukasi Perawatan"],
-    shouldBookDoctor: riskLevel !== "Rendah",
-    detectedSignals: finalSignals,
-    cameraSectionNote,
+    riskScore,
+    summary: `Ringkasan keluhan: ${input.complaintText || "keluhan singkat tidak diisi"}; gejala: ${input.selectedSymptoms.join(", ") || "belum dipilih"}; durasi: ${input.duration || "belum dipilih"}; nyeri: ${input.painScore}/10.`,
+    cameraSummary,
+    possibleCategories: possibleCategories.length ? possibleCategories : ["Keluhan mata non-spesifik"],
+    explanation,
+    recommendation,
+    ctaPrimary,
+    ctaSecondary,
   };
 }
