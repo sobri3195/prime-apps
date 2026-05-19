@@ -1,5 +1,4 @@
 import {
-  Bell,
   BookmarkPlus,
   CheckCircle2,
   Coins,
@@ -8,7 +7,6 @@ import {
   Gift,
   Glasses,
   Heart,
-  Minus,
   Pill,
   Plus,
   Search,
@@ -16,7 +14,6 @@ import {
   ShoppingCart,
   Sparkles,
   Stethoscope,
-  Trash2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -41,7 +38,7 @@ type CategoryName =
   | 'Lensa Kontak'
   | 'Tetes Mata'
   | 'Vitamin Mata'
-  | 'Paket Klinik';
+  | 'Pemeriksaan';
 
 type Product = {
   name: string;
@@ -82,15 +79,15 @@ const categories: Array<{
   { name: 'Lensa Kontak', icon: Eye, image: contactLensImage },
   { name: 'Tetes Mata', icon: Pill, image: eyeDropsImage },
   { name: 'Vitamin Mata', icon: Sparkles, image: eyeVitaminImage },
-  { name: 'Paket Klinik', icon: Stethoscope, image: clinicCheckupImage },
+  { name: 'Pemeriksaan', icon: Stethoscope, image: clinicCheckupImage },
 ];
 
 const products: Product[] = [
   {
     name: 'Frame Kacamata Prime Classic',
     desc: 'Unisex / ringan',
-    price: 'Rp 450.000',
-    priceValue: 450000,
+    price: 'Rp 650.000',
+    priceValue: 650000,
     category: 'Kacamata',
     icon: Glasses,
     image: frameClassicImage,
@@ -134,25 +131,25 @@ const services: Service[] = [
     desc: 'Cek mata menyeluruh dengan dokter & optometri',
     price: 'Rp 150.000',
     priceValue: 150000,
-    category: 'Paket Klinik',
+    category: 'Pemeriksaan',
     badge: 'Paket',
     image: clinicCheckupImage,
   },
   {
     title: 'Paket Konsultasi Dokter Mata',
-    desc: 'Konsultasi & saran medis',
+    desc: 'Konsultasi keluhan mata dengan dokter.',
     price: 'Rp 200.000',
     priceValue: 200000,
-    category: 'Paket Klinik',
+    category: 'Pemeriksaan',
     badge: 'Layanan',
     image: clinicCheckupImage,
   },
   {
     title: 'Screening Mata Awal',
-    desc: 'Pemeriksaan awal cepat',
+    desc: 'Pemeriksaan awal mata cepat.',
     price: 'Rp 75.000',
     priceValue: 75000,
-    category: 'Paket Klinik',
+    category: 'Pemeriksaan',
     badge: 'Layanan',
     image: eyeDropsImage,
   },
@@ -161,7 +158,7 @@ const services: Service[] = [
     desc: 'Cek refraksi dan resep kacamata',
     price: 'Rp 100.000',
     priceValue: 100000,
-    category: 'Paket Klinik',
+    category: 'Pemeriksaan',
     badge: 'Layanan',
     image: frameClassicImage,
   },
@@ -199,25 +196,25 @@ function readStorage<T>(key: string, fallback: T): T {
 
 function MarketplaceHeader() {
   return (
-    <header className="flex items-start justify-between gap-4 rounded-[28px] border border-white/80 bg-white/80 p-4 shadow-prime-card backdrop-blur">
+    <header className="flex items-start justify-between gap-4 rounded-[24px] border border-prime-gold/20 bg-white p-5 shadow-prime-card backdrop-blur">
       <div className="min-w-0">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-prime-gold-dark/75">
-          Prime Belanja
+          PRIME BELANJA
         </p>
         <h1 className="mt-1 text-[28px] font-bold leading-tight tracking-tight text-prime-black">
           Marketplace
         </h1>
         <p className="mt-1 max-w-[270px] text-sm leading-relaxed text-prime-muted">
-          Fokus belanja kebutuhan mata dengan gambar produk jelas
+          Fokus belanja kebutuhan mata dengan produk dan layanan klinik.
         </p>
       </div>
       <button
         type="button"
         className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] border border-prime-gold/20 bg-prime-cream/45 text-prime-gold-dark shadow-sm transition hover:bg-prime-cream/70 focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:scale-95"
-        aria-label="Buka notifikasi marketplace"
+        aria-label="Buka keranjang marketplace"
       >
-        <Bell className="h-5 w-5" aria-hidden="true" />
-        <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full border-2 border-white bg-rose-500" />
+        <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+        
       </button>
     </header>
   );
@@ -250,9 +247,9 @@ function SearchFilterBar({
         type="button"
         onClick={onFilterClick}
         className={`flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-[18px] border shadow-prime-card transition focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:scale-95 ${
-          selectedCategory === 'Paket Klinik'
+          selectedCategory === 'Pemeriksaan'
             ? 'border-prime-gold bg-prime-gold text-white'
-            : 'border-prime-gold/15 bg-white text-prime-gold-dark'
+            : 'border-prime-gold/30 bg-white text-prime-gold-dark'
         }`}
         aria-label="Filter layanan klinik"
       >
@@ -264,7 +261,7 @@ function SearchFilterBar({
 
 function MarketplaceHero() {
   return (
-    <article className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#fff7dc] via-[#d6b653] to-[#9d7b1f] p-5 text-prime-black shadow-prime-lift">
+    <article className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#b19731] via-[#d4b257] to-[#ffe7ab] p-5 text-prime-black shadow-prime-lift">
       <div className="absolute -right-14 -top-16 h-36 w-36 rounded-full bg-white/45 blur-2xl" />
       <div className="absolute -bottom-16 left-8 h-28 w-28 rounded-full bg-prime-teal-soft/80 blur-2xl" />
       <div className="relative grid grid-cols-[1fr_102px] items-center gap-3">
@@ -333,7 +330,7 @@ function CategoryScroller({
         title="Kategori Cepat"
         action={
           <p className="text-xs font-semibold text-prime-gold-dark/80">
-            Pilih sesuai kebutuhan 👁️
+            Pilih sesuai kebutuhan
           </p>
         }
       />
@@ -348,14 +345,14 @@ function CategoryScroller({
               onClick={() => onSelectCategory(name)}
               className={`min-h-[118px] min-w-[104px] snap-start rounded-[22px] border p-2.5 text-center shadow-prime-card transition focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:scale-[0.97] ${
                 isSelected
-                  ? 'border-prime-gold/70 bg-prime-gold-soft text-prime-gold-dark ring-1 ring-prime-gold/25'
-                  : 'border-white bg-white text-prime-black hover:border-prime-gold/25'
+                  ? 'border-prime-gold bg-prime-gold text-white ring-1 ring-prime-gold/25'
+                  : 'border-prime-gold/30 bg-white text-prime-black hover:border-prime-gold/50'
               }`}
               aria-pressed={isSelected}
             >
               <span
                 className={`mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] ${
-                  isSelected ? 'bg-white' : 'bg-[#fff8e8]'
+                  isSelected ? 'bg-white/90' : 'bg-[#fff8e8]'
                 }`}
               >
                 <img
@@ -367,8 +364,8 @@ function CategoryScroller({
               <span
                 className={`mx-auto mt-2 flex h-7 w-7 items-center justify-center rounded-xl ${
                   isSelected
-                    ? 'bg-prime-gold text-white'
-                    : 'bg-prime-teal-soft text-prime-teal'
+                    ? 'bg-white text-prime-gold-dark'
+                    : 'bg-prime-cream/70 text-prime-gold-dark'
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -510,7 +507,7 @@ function ServiceCard({
   onBookService: (service: Service) => void;
 }) {
   return (
-    <article className="rounded-[24px] border border-prime-teal/10 bg-white p-3 shadow-prime-card">
+    <article className="rounded-[24px] border border-prime-gold/15 bg-white p-4 shadow-prime-card">
       <div className="flex items-center gap-3">
         <div className="flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-[22px] bg-prime-teal-soft p-2.5">
           <img
@@ -520,7 +517,7 @@ function ServiceCard({
           />
         </div>
         <div className="min-w-0 flex-1">
-          <span className="rounded-full bg-prime-teal-soft px-2.5 py-1 text-[11px] font-bold text-prime-teal">
+          <span className="rounded-full bg-prime-cream/70 px-2.5 py-1 text-[11px] font-bold text-prime-gold-dark">
             {service.badge}
           </span>
           <h3 className="mt-2 text-[15px] font-bold leading-snug text-prime-black">
@@ -531,14 +528,14 @@ function ServiceCard({
           </p>
         </div>
       </div>
-      <div className="mt-3 flex items-center justify-between gap-3 border-t border-prime-teal/10 pt-3">
-        <p className="text-base font-extrabold text-prime-teal">
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-prime-gold/10 pt-3">
+        <p className="text-base font-extrabold text-prime-gold-dark">
           {service.price}
         </p>
         <button
           type="button"
           onClick={() => onBookService(service)}
-          className="rounded-[16px] bg-prime-teal px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-prime-teal/20 transition focus:outline-none focus:ring-4 focus:ring-prime-teal/20 active:scale-95"
+          className="rounded-[16px] bg-prime-gold px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-prime-gold/20 transition focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:scale-95"
         >
           Booking
         </button>
@@ -578,23 +575,17 @@ function MiniCart({
   cartItems,
   cartQuantity,
   cartTotal,
-  onDecrease,
-  onIncrease,
-  onRemove,
   onCheckout,
 }: {
   cartItems: CartItem[];
   cartQuantity: number;
   cartTotal: number;
-  onDecrease: (name: string) => void;
-  onIncrease: (item: CartItem) => void;
-  onRemove: (name: string) => void;
   onCheckout: () => void;
 }) {
   const isEmpty = cartQuantity === 0;
 
   return (
-    <section className="sticky bottom-[calc(104px+env(safe-area-inset-bottom))] z-20 rounded-[26px] border border-prime-gold/20 bg-white/95 p-4 shadow-prime-lift backdrop-blur">
+    <section className="rounded-[24px] border border-prime-gold/20 bg-white p-4 shadow-prime-card">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-bold text-prime-black">Keranjang</p>
@@ -609,7 +600,7 @@ function MiniCart({
 
       <div className="mt-3 space-y-2">
         {cartItems.length ? (
-          cartItems.slice(0, 2).map((item) => (
+          cartItems.slice(0, 3).map((item) => (
             <div
               key={item.name}
               className="flex items-center justify-between gap-2 rounded-[18px] bg-[#fff8e8] px-3 py-2"
@@ -622,32 +613,7 @@ function MiniCart({
                   {item.price} × {item.quantity}
                 </p>
               </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => onDecrease(item.name)}
-                  className="rounded-lg bg-white p-1.5 text-prime-gold-dark focus:outline-none focus:ring-2 focus:ring-prime-gold/20"
-                  aria-label={`Kurangi ${item.name}`}
-                >
-                  <Minus className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onIncrease(item)}
-                  className="rounded-lg bg-white p-1.5 text-prime-gold-dark focus:outline-none focus:ring-2 focus:ring-prime-gold/20"
-                  aria-label={`Tambah ${item.name}`}
-                >
-                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onRemove(item.name)}
-                  className="rounded-lg bg-rose-50 p-1.5 text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-200"
-                  aria-label={`Hapus ${item.name}`}
-                >
-                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-              </div>
+              <p className="text-xs font-semibold text-prime-gold-dark">x{item.quantity}</p>
             </div>
           ))
         ) : (
@@ -657,7 +623,7 @@ function MiniCart({
         )}
         {cartItems.length > 2 && (
           <p className="text-xs font-semibold text-prime-gold-dark">
-            +{cartItems.length - 2} item lainnya tersimpan.
+            +{cartItems.length - 3} item lainnya tersimpan.
           </p>
         )}
       </div>
@@ -1054,7 +1020,7 @@ export function MarketplacePage() {
   };
 
   return (
-    <section className="space-y-7 pb-8">
+    <section className="space-y-6 pb-24">
       <MarketplaceHeader />
       <SearchFilterBar
         searchTerm={searchTerm}
@@ -1062,7 +1028,7 @@ export function MarketplacePage() {
         onSearchChange={setSearchTerm}
         onFilterClick={() =>
           updateCategory(
-            selectedCategory === 'Paket Klinik' ? DEFAULT_CATEGORY : 'Paket Klinik',
+            selectedCategory === 'Pemeriksaan' ? DEFAULT_CATEGORY : 'Pemeriksaan',
           )
         }
       />
@@ -1095,9 +1061,6 @@ export function MarketplacePage() {
         cartItems={cartItems}
         cartQuantity={cartQuantity}
         cartTotal={cartTotal}
-        onDecrease={decreaseCartItem}
-        onIncrease={addToCart}
-        onRemove={removeCartItem}
         onCheckout={checkoutCart}
       />
       <PromoCard />
