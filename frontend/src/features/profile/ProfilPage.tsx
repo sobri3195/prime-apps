@@ -1,174 +1,48 @@
-import {
-  Bell,
-  CalendarDays,
-  ChevronRight,
-  CircleCheck,
-  Eye,
-  FileText,
-  Fingerprint,
-  Lock,
-  Mail,
-  MapPin,
-  Phone,
-  Settings,
-  ShieldCheck,
-  User,
-  UserRound,
-  Users,
-} from 'lucide-react';
-import { BadgeSection, PointsStreakCard, RewardSection } from '../gamification/GamificationComponents';
+import { Bell, CalendarDays, ChevronRight, CircleCheck, Eye, FileText, Fingerprint, Lock, Mail, MapPin, Phone, Settings, ShieldCheck, User, UserRound, Users, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { BadgeSection, DailyWinsCard, RewardSection } from '../gamification/GamificationComponents';
+import { addFamilyMember, deleteFamilyMember, getFamilyMembers, getMedicalRecords, getPatientProfile, type FamilyMember, type MedicalRecord, type PatientProfile, updateFamilyMember, updatePatientProfile } from './profileService';
 
-const familyMembers = [
-  { role: 'Ibu', rm: 'RM-2026-00110', status: 'Aktif' },
-  { role: 'Ayah', rm: 'RM-2025-00095', status: 'Aktif' },
-  { role: 'Anak', rm: 'RM-2026-00142', status: 'Kontrol Berkala' },
-];
-
-const profileMenus = [
-  { label: 'Data Pribadi', icon: UserRound },
-  { label: 'Rekam Medis', icon: FileText },
-  { label: 'Riwayat Pemeriksaan', icon: CalendarDays },
-  { label: 'Resep Kacamata', icon: Eye },
-  { label: 'Hasil AI Mata', icon: Fingerprint },
-  { label: 'Alamat & Kontak', icon: MapPin },
-  { label: 'Pengaturan Notifikasi', icon: Bell },
-  { label: 'Bantuan Klinik', icon: ShieldCheck },
-];
+const profileMenus = [{ label: 'Data Pribadi', icon: UserRound }, { label: 'Dokumen Medis', icon: FileText }, { label: 'Riwayat Pemeriksaan', icon: CalendarDays }, { label: 'Resep Kacamata', icon: Eye }, { label: 'Hasil AI Mata', icon: Fingerprint }, { label: 'Alamat & Kontak', icon: MapPin }, { label: 'Pengaturan Notifikasi', icon: Bell }, { label: 'Bantuan Klinik', icon: ShieldCheck }];
 
 export function ProfilPage() {
-  return (
-    <section className="space-y-6">
-      <header className="space-y-2 px-1 pt-1">
-        <div className="flex items-start justify-between">
-          <h1 className="text-[30px] font-bold leading-tight text-prime-black">Profil Pasien</h1>
-          <button className="mt-1 rounded-xl border border-prime-gold/20 bg-white p-2.5 text-prime-gold shadow-sm shadow-prime-gold/10 transition hover:bg-prime-cream/50">
-            <Settings size={18} />
-          </button>
-        </div>
-        <p className="text-sm text-prime-black/70">Kelola data akun, rekam medis, dan keluarga Anda.</p>
-      </header>
+  const [patientProfile, setPatientProfile] = useState<PatientProfile | null>(null); const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]); const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
+  const [selectedModal, setSelectedModal] = useState<string | null>(null); const [toastMessage, setToastMessage] = useState(''); const [isLoading, setLoading] = useState(true); const [form, setForm] = useState<Record<string, string>>({});
+  useEffect(() => { (async () => { setLoading(true); setPatientProfile(await getPatientProfile()); setFamilyMembers(await getFamilyMembers()); setMedicalRecords(await getMedicalRecords()); setLoading(false); })(); }, []);
+  useEffect(() => { if (toastMessage) setTimeout(() => setToastMessage(''), 2200); }, [toastMessage]);
+  const show = (m: string, data?: Record<string, string>) => { setForm(data ?? {}); setSelectedModal(m); };
+  const saveProfile = async () => { if (!form.fullName || !/^\+?\d{10,15}$/.test(form.phone || '') || !/\S+@\S+\.\S+/.test(form.email || '') || !form.birthDate) return setToastMessage('Periksa validasi form terlebih dahulu.'); const payload = { ...patientProfile!, ...form } as PatientProfile; await updatePatientProfile(payload); setPatientProfile(payload); setSelectedModal(null); setToastMessage('Profil berhasil diperbarui.'); };
+  const latest = medicalRecords[0];
 
-      <article className="rounded-[28px] bg-gradient-to-br from-prime-black via-prime-gold to-[#d7bd64] p-4 text-white shadow-lg shadow-prime-gold/20">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/30 bg-white/20">
-              <UserRound size={34} />
-            </div>
-            <div>
-              <p className="text-lg font-semibold leading-tight">Muhammad Sobri Maulana</p>
-              <p className="text-xs text-white/90">Pasien Klinik Utama Prime</p>
-            </div>
-          </div>
-          <span className="rounded-full bg-prime-cream px-3 py-1 text-xs font-semibold text-prime-black">Aktif</span>
-        </div>
-        <div className="mt-4 rounded-2xl border border-white/25 bg-white/20 p-3 backdrop-blur-sm">
-          <p className="text-xs text-white/90">Nomor Rekam Medis</p>
-          <p className="text-base font-semibold tracking-wide">RM-2026-00128</p>
-        </div>
-        <button className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-prime-gold shadow-sm transition hover:bg-prime-cream/50">
-          Edit Profil
-        </button>
-      </article>
+  if (isLoading) return <section className="space-y-4 pb-28"><div className="h-16 animate-pulse rounded-3xl bg-prime-cream/60" /><div className="h-40 animate-pulse rounded-3xl bg-prime-cream/60" /></section>;
+  if (!patientProfile) return <div className="rounded-2xl bg-red-50 p-4 text-red-600">Gagal memuat profil.</div>;
 
-      <PointsStreakCard />
+  return <section className="space-y-6 pb-28">
+    <header className="space-y-2 px-1 pt-1"><div className="flex items-start justify-between"><h1 className="text-[30px] font-bold text-prime-black">Profil Pasien</h1><button onClick={() => show('settings')} className="mt-1 rounded-xl border border-prime-gold/20 bg-white p-2.5 text-prime-gold"><Settings size={18} /></button></div></header>
+    <article className="rounded-[28px] bg-gradient-to-br from-prime-black via-prime-gold to-[#d7bd64] p-4 text-white shadow-lg"><div className="flex items-start justify-between"><div className="flex items-center gap-3"><div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/30 bg-white/20"><UserRound size={34} /></div><div><p className="text-lg font-semibold">{patientProfile.fullName}</p><p className="text-xs">{patientProfile.role}</p></div></div><span className="rounded-full bg-prime-cream px-3 py-1 text-xs font-semibold text-prime-black">{patientProfile.status}</span></div><div className="mt-3 rounded-2xl border border-white/25 bg-white/20 p-3"><p className="text-xs">Nomor Rekam Medis</p><p className="font-semibold">{patientProfile.medicalRecordNumber}</p></div><button onClick={() => show('edit-profile', patientProfile as unknown as Record<string, string>)} className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-prime-gold">Edit Profil</button></article>
+    <button onClick={() => show('daily-wins')}><div className="pointer-events-none"><RewardSection /></div></button>
+    <DailyWinsCard />
+    <BadgeSection />
+    <article className="rounded-[28px] bg-white p-4 shadow-md"><h2 className="font-semibold">Informasi Akun</h2><ul className="mt-3 space-y-2">{[{ label: 'phone', title: 'Nomor HP', value: patientProfile.phone, icon: Phone }, { label: 'email', title: 'Email', value: patientProfile.email, icon: Mail }, { label: 'birthDate', title: 'Tanggal lahir', value: patientProfile.birthDate, icon: CalendarDays }, { label: 'gender', title: 'Jenis kelamin', value: patientProfile.gender, icon: User }, { label: 'address', title: 'Alamat', value: patientProfile.address, icon: MapPin }].map((item) => <li key={item.label}><button onClick={() => show('single-edit', { key: item.label, value: item.value })} className="flex w-full items-start gap-3 rounded-xl bg-[#fff8e8] px-3 py-2.5"><item.icon size={16} className="mt-0.5 text-prime-gold" /><div className="text-left"><p className="text-xs text-prime-black/60">{item.title}</p><p className="font-medium">{item.value}</p></div></button></li>)}</ul></article>
+    <article className="rounded-[28px] bg-white p-4 shadow-md"><h2 className="font-semibold">Ringkasan Rekam Medis</h2>{latest ? <><div className="mt-3 space-y-2"><div className="rounded-xl bg-prime-cream/50 p-3 text-sm">{latest.visitDate} • {latest.complaint} • {latest.doctor}</div></div><button onClick={() => show('records')} className="mt-4 w-full rounded-xl bg-prime-gold px-4 py-2.5 text-sm font-semibold text-white">Lihat Rekam Medis</button></> : <p className="mt-2 text-sm">Belum ada riwayat pemeriksaan.</p>}</article>
+    <article className="rounded-[28px] bg-white p-4 shadow-md"><div className="flex items-center gap-2"><Users size={16} className="text-prime-gold" /><h2 className="font-semibold">Keluarga Terdaftar</h2></div><div className="mt-3 space-y-2.5">{familyMembers.map((m) => <div key={m.id} className="rounded-xl bg-[#fff8e8] p-3"><button onClick={() => show('family-detail', m as unknown as Record<string, string>)} className="w-full text-left"><div className="flex justify-between"><p className="font-semibold">{m.relationship}</p><span className="text-xs">{m.status}</span></div><p className="text-sm">{m.name}</p></button></div>)}</div><button onClick={() => show('family-form')} className="mt-3 w-full rounded-xl border border-prime-gold/25 bg-prime-cream/50 px-4 py-2.5 text-sm font-semibold text-prime-gold">Tambah Anggota Keluarga</button></article>
+    <article className="rounded-[28px] bg-white p-4 shadow-md"><h2 className="font-semibold">Menu Profil</h2><ul className="mt-2 divide-y">{profileMenus.map((menu) => <li key={menu.label}><button onClick={() => setToastMessage(`${menu.label} dibuka.`)} className="flex w-full items-center justify-between py-3 text-left"><span className="flex items-center gap-3 text-sm"><menu.icon size={17} className="text-prime-gold" />{menu.label}</span><ChevronRight size={16} /></button></li>)}</ul></article>
+    <article className="rounded-[28px] border border-prime-gold/20 bg-prime-cream/50 p-4"><h2 className="font-semibold">Keamanan Akun</h2><div className="mt-3 space-y-2">{['Ubah Password', 'Verifikasi Nomor HP', 'Verifikasi Email', 'PIN / Biometrik aplikasi', 'Logout dari semua perangkat'].map((item) => <button key={item} onClick={() => show(item)} className="flex w-full items-center justify-between rounded-xl bg-white px-3 py-2.5 text-sm"><span className="flex items-center gap-2"><CircleCheck size={15} className="text-prime-gold" />{item}</span><ChevronRight size={16} /></button>)}</div></article>
+    <RewardSection />
+    <button onClick={() => show('logout')} className="w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">Keluar Akun</button>
 
-      <BadgeSection />
-
-      <article className="rounded-[28px] bg-white p-4 shadow-md shadow-prime-gold/10">
-        <h2 className="text-base font-semibold text-prime-black">Informasi Akun</h2>
-        <ul className="mt-3 space-y-3 text-sm text-prime-black/75">
-          {[
-            { icon: Phone, label: 'Nomor HP', value: '+62 812 3456 7890' },
-            { icon: Mail, label: 'Email', value: 'sobri.maulana@email.com' },
-            { icon: CalendarDays, label: 'Tanggal lahir', value: '21 Maret 1992' },
-            { icon: User, label: 'Jenis kelamin', value: 'Laki-laki' },
-            { icon: MapPin, label: 'Alamat', value: 'Jl. Melati Indah No. 23, Makassar' },
-          ].map((item) => (
-            <li key={item.label} className="flex items-start gap-3 rounded-xl bg-[#fff8e8] px-3 py-2.5">
-              <item.icon size={16} className="mt-0.5 text-prime-gold" />
-              <div>
-                <p className="text-xs text-prime-black/60">{item.label}</p>
-                <p className="font-medium text-prime-black">{item.value}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </article>
-
-      <article className="rounded-[28px] bg-white p-4 shadow-md shadow-prime-gold/10">
-        <h2 className="text-base font-semibold text-prime-black">Ringkasan Rekam Medis</h2>
-        <div className="mt-3 grid grid-cols-1 gap-2.5 text-sm">
-          <div className="rounded-xl bg-prime-cream/50 p-3"><span className="text-xs text-prime-black/60">Kunjungan terakhir</span><p className="font-semibold">12 Mei 2026</p></div>
-          <div className="rounded-xl bg-prime-cream/50 p-3"><span className="text-xs text-prime-black/60">Keluhan terakhir</span><p className="font-semibold">Mata buram</p></div>
-          <div className="rounded-xl bg-prime-cream/50 p-3"><span className="text-xs text-prime-black/60">Dokter terakhir</span><p className="font-semibold">dr. Sp.M</p></div>
-        </div>
-        <button className="mt-4 w-full rounded-xl bg-prime-gold px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-prime-gold/20 transition hover:bg-[#9e8629]">
-          Lihat Rekam Medis
-        </button>
-      </article>
-
-      <article className="rounded-[28px] bg-white p-4 shadow-md shadow-prime-gold/10">
-        <div className="flex items-center gap-2">
-          <Users size={16} className="text-prime-gold" />
-          <h2 className="text-base font-semibold text-prime-black">Keluarga Terdaftar</h2>
-        </div>
-        <div className="mt-3 space-y-2.5">
-          {familyMembers.map((member) => (
-            <div key={member.rm} className="rounded-xl border border-prime-gold/10 bg-[#fff8e8] px-3 py-2.5">
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-prime-black">{member.role}</p>
-                <span className="rounded-full bg-prime-cream/70 px-2.5 py-0.5 text-xs font-semibold text-prime-gold">{member.status}</span>
-              </div>
-              <p className="mt-1 text-xs text-prime-black/60">Nomor Rekam Medis</p>
-              <p className="text-sm font-medium text-prime-black/75">{member.rm}</p>
-            </div>
-          ))}
-        </div>
-        <button className="mt-4 w-full rounded-xl border border-prime-gold/25 bg-prime-cream/50 px-4 py-2.5 text-sm font-semibold text-prime-gold transition hover:bg-prime-cream/70">
-          Tambah Anggota Keluarga
-        </button>
-      </article>
-
-      <article className="rounded-[28px] bg-white p-4 shadow-md shadow-prime-gold/10">
-        <h2 className="text-base font-semibold text-prime-black">Menu Profil</h2>
-        <ul className="mt-2 divide-y divide-prime-gold/10">
-          {profileMenus.map((menu) => (
-            <li key={menu.label}>
-              <button className="flex w-full items-center justify-between py-3 text-left">
-                <span className="flex items-center gap-3 text-sm font-medium text-prime-black/75">
-                  <menu.icon size={17} className="text-prime-gold" />
-                  {menu.label}
-                </span>
-                <ChevronRight size={16} className="text-prime-black/40" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      </article>
-
-      <article className="rounded-[28px] border border-prime-gold/20 bg-prime-cream/50 p-4 shadow-sm shadow-prime-gold/10">
-        <div className="flex items-start gap-2.5">
-          <Lock size={18} className="mt-0.5 text-prime-gold" />
-          <div>
-            <h2 className="text-base font-semibold text-prime-black">Keamanan Akun</h2>
-            <p className="mt-0.5 text-sm text-prime-black/70">Pastikan data Anda selalu terlindungi.</p>
-          </div>
-        </div>
-        <div className="mt-3 space-y-2">
-          {['Ubah Password', 'Verifikasi Nomor HP'].map((item) => (
-            <button key={item} className="flex w-full items-center justify-between rounded-xl bg-white px-3 py-2.5 text-sm font-medium text-prime-black/75">
-              <span className="flex items-center gap-2"><CircleCheck size={15} className="text-prime-gold" />{item}</span>
-              <ChevronRight size={16} className="text-prime-black/40" />
-            </button>
-          ))}
-        </div>
-      </article>
-
-      <RewardSection />
-
-      <button className="w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100">
-        Keluar Akun
-      </button>
-    </section>
-  );
+    {selectedModal && <div className="fixed inset-0 z-[60] grid place-items-end bg-black/40 p-4"><div className="w-full max-w-[430px] rounded-3xl bg-white p-4"><div className="mb-3 flex items-center justify-between"><h3 className="font-semibold">{selectedModal}</h3><button onClick={() => setSelectedModal(null)}><X size={18} /></button></div>
+      {selectedModal === 'edit-profile' && <div className="space-y-2">{['fullName', 'phone', 'email', 'birthDate', 'gender', 'address'].map((k) => <input key={k} value={form[k] ?? ''} onChange={(e) => setForm((p) => ({ ...p, [k]: e.target.value }))} placeholder={k} className="w-full rounded-xl border p-2" />)}<div className="flex gap-2"><button onClick={saveProfile} className="rounded-xl bg-prime-gold px-3 py-2 text-white">Simpan Perubahan</button><button onClick={() => setSelectedModal(null)} className="rounded-xl border px-3 py-2">Batal</button></div></div>}
+      {selectedModal === 'single-edit' && <div className="space-y-2"><input value={form.value ?? ''} onChange={(e) => setForm((p) => ({ ...p, value: e.target.value }))} className="w-full rounded-xl border p-2" /><button onClick={() => { const payload = { ...patientProfile, [form.key]: form.value } as PatientProfile; setPatientProfile(payload); updatePatientProfile(payload); setSelectedModal(null); setToastMessage('Data berhasil diperbarui.'); }} className="rounded-xl bg-prime-gold px-3 py-2 text-white">Simpan</button></div>}
+      {selectedModal === 'records' && <div className="space-y-2">{medicalRecords.map((r) => <div key={r.id} className="rounded-xl bg-prime-cream/50 p-2 text-sm"><p>{r.visitDate} - {r.doctor}</p><p>{r.complaint}</p><button onClick={() => show('record-detail', r as unknown as Record<string, string>)} className="text-prime-gold">Lihat Detail</button></div>)}</div>}
+      {selectedModal === 'record-detail' && <div className="space-y-2 text-sm"><p>Diagnosis: {form.diagnosis}</p><p>Resep: {form.prescription}</p><p>Hasil: {form.result}</p><div className="flex gap-2"><button className="rounded-xl border px-3 py-2">Unduh PDF</button><button className="rounded-xl border px-3 py-2">Bagikan ke Dokter</button><button className="rounded-xl bg-prime-gold px-3 py-2 text-white">Booking Kontrol</button></div></div>}
+      {selectedModal === 'family-form' && <div className="space-y-2">{['name', 'relationship', 'phone', 'birthDate', 'gender', 'address'].map((k) => <input key={k} value={form[k] ?? ''} onChange={(e) => setForm((p) => ({ ...p, [k]: e.target.value }))} placeholder={k} className="w-full rounded-xl border p-2" />)}<button onClick={async () => { if (!form.name || !form.relationship || !form.phone || !form.birthDate || !form.gender) return setToastMessage('Lengkapi data keluarga wajib.'); const member: FamilyMember = { id: crypto.randomUUID(), name: form.name, relationship: form.relationship, phone: form.phone, birthDate: form.birthDate, gender: form.gender, address: form.address, medicalRecordNumber: `RM-${Date.now().toString().slice(-6)}`, status: 'Aktif', history: 'Belum ada riwayat' }; await addFamilyMember(member); setFamilyMembers((p) => [member, ...p]); setSelectedModal(null); setToastMessage('Anggota keluarga berhasil ditambahkan.'); }} className="rounded-xl bg-prime-gold px-3 py-2 text-white">Simpan</button></div>}
+      {selectedModal === 'family-detail' && <div className="space-y-2 text-sm"><p>{form.name} - {form.relationship}</p><p>{form.medicalRecordNumber}</p><div className="flex gap-2"><button onClick={() => show('family-form', form)} className="rounded-xl border px-3 py-2">Edit</button><button onClick={async () => { await deleteFamilyMember(form.id); setFamilyMembers((p) => p.filter((f) => f.id !== form.id)); setSelectedModal(null); setToastMessage('Anggota keluarga dihapus.'); }} className="rounded-xl border px-3 py-2">Hapus</button><button onClick={() => setToastMessage(`${form.name} dijadikan profil aktif.`)} className="rounded-xl bg-prime-gold px-3 py-2 text-white">Jadikan Profil Aktif</button></div></div>}
+      {selectedModal === 'Ubah Password' && <div className="space-y-2"><input type="password" placeholder="Password lama" className="w-full rounded-xl border p-2" /><input type="password" placeholder="Password baru (min. 8 karakter)" onChange={(e) => setForm((p) => ({ ...p, p1: e.target.value }))} className="w-full rounded-xl border p-2" /><input type="password" placeholder="Konfirmasi password baru" onChange={(e) => setForm((p) => ({ ...p, p2: e.target.value }))} className="w-full rounded-xl border p-2" /><button onClick={() => { if ((form.p1 || '').length < 8 || form.p1 !== form.p2) return setToastMessage('Validasi password gagal.'); setSelectedModal(null); setToastMessage('Password berhasil diperbarui.'); }} className="rounded-xl bg-prime-gold px-3 py-2 text-white">Simpan</button></div>}
+      {selectedModal === 'Verifikasi Nomor HP' && <div className="space-y-2"><button onClick={() => setToastMessage('OTP dikirim.')} className="rounded-xl border px-3 py-2">Kirim OTP</button><input placeholder="Input kode OTP" className="w-full rounded-xl border p-2" /><button onClick={() => { setSelectedModal(null); setToastMessage('Nomor HP berhasil diverifikasi.'); }} className="rounded-xl bg-prime-gold px-3 py-2 text-white">Verifikasi</button></div>}
+      {selectedModal === 'logout' && <div><p className="text-sm">Apakah Anda yakin ingin keluar dari akun?</p><div className="mt-3 flex gap-2"><button className="rounded-xl border px-3 py-2" onClick={() => setSelectedModal(null)}>Batal</button><button className="rounded-xl bg-red-500 px-3 py-2 text-white" onClick={() => { localStorage.clear(); window.location.href = '/login'; }}>Keluar</button></div></div>}
+      {!['edit-profile','single-edit','records','record-detail','family-form','family-detail','Ubah Password','Verifikasi Nomor HP','logout'].includes(selectedModal) && <div className="text-sm">Detail {selectedModal}.</div>}
+    </div></div>}
+    {toastMessage && <div className="fixed left-1/2 top-5 z-[70] -translate-x-1/2 rounded-xl bg-prime-black px-4 py-2 text-sm text-white">{toastMessage}</div>}
+  </section>;
 }
