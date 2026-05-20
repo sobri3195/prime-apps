@@ -23,10 +23,11 @@ export function BottomNavigation() {
                 to={path}
                 aria-label={label}
                 className={({ isActive }) =>
-                  `group flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-[20px] text-[11.5px] transition duration-200 focus:outline-none focus:ring-4 focus:ring-prime-gold/20 ${
-                    isActive ? 'bg-prime-gold-soft text-prime-gold-dark' : 'text-prime-muted hover:bg-prime-surface hover:text-prime-ink'
+                  `group flex min-h-[62px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[20px] text-[11.5px] transition duration-200 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-prime-gold/20 ${
+                    isActive ? 'bg-prime-gold-soft' : 'text-[#9da3b0] hover:bg-prime-surface hover:text-prime-ink'
                   }`
                 }
+                style={({ isActive }) => ({ color: isActive ? '#B19731' : '#9da3b0' })}
               >
                 {({ isActive }) => (
                   <>

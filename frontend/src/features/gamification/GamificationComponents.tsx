@@ -195,6 +195,7 @@ export function PointsStreakCard() {
 
 export function BadgeSection() {
   const badges = useGamificationStore((state) => state.badges);
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
 
   return (
     <section className="rounded-[28px] bg-white p-4 shadow-md shadow-prime-gold/10">
@@ -213,9 +214,11 @@ export function BadgeSection() {
           const Icon = badgeIcons[badge.icon] ?? Medal;
 
           return (
-            <article
+            <button
+              type="button"
               key={badge.id}
-              className={`rounded-2xl border p-3 transition ${
+              onClick={() => setSelectedBadge(badge)}
+              className={`w-full cursor-pointer rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 active:scale-[0.99] ${
                 badge.isUnlocked ? 'border-prime-gold/30 bg-prime-cream/60' : 'border-prime-gold/10 bg-[#fff8e8]/80'
               }`}
             >
@@ -240,10 +243,17 @@ export function BadgeSection() {
                   </p>
                 </div>
               </div>
-            </article>
+            </button>
           );
         })}
       </div>
+      {selectedBadge && (
+        <div className="mt-3 rounded-2xl border border-prime-gold/20 bg-prime-cream/40 p-3 text-xs text-prime-black/70">
+          <p className="font-semibold text-prime-black">{selectedBadge.name}</p>
+          <p className="mt-1">{selectedBadge.description}</p>
+          <p className="mt-1 text-prime-gold">{selectedBadge.isUnlocked ? 'Badge sudah terbuka.' : `Progress menuju target ${selectedBadge.requirementValue}`}</p>
+        </div>
+      )}
     </section>
   );
 }
