@@ -1,5 +1,6 @@
 import { CalendarCheck2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { POINT_RULES, useGamificationStore } from '@/features/gamification/gamificationStore';
 
 export function BookingPage() {
@@ -8,8 +9,13 @@ export function BookingPage() {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [feedback, setFeedback] = useState('');
+  const location = useLocation() as { state?: { service?: string } };
   const { addPoints } = useGamificationStore();
   const userId = 'patient-001';
+
+  useEffect(() => {
+    if (location.state?.service) setService(location.state.service);
+  }, [location.state]);
 
   const handleSubmitBooking = () => {
     if (!date || !time) {
