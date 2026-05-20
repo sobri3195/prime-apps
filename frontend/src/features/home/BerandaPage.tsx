@@ -29,6 +29,7 @@ type QuickAction = {
 type QuickMenu = {
   title: string;
   icon: LucideIcon;
+  path: string;
 };
 
 const quickActions: QuickAction[] = [
@@ -47,10 +48,10 @@ const quickActions: QuickAction[] = [
 ];
 
 const quickMenus: QuickMenu[] = [
-  { title: 'Riwayat Pemeriksaan', icon: FileText },
-  { title: 'Resep Kacamata', icon: Glasses },
-  { title: 'Hasil AI Mata', icon: Eye },
-  { title: 'Edukasi Mata', icon: BookOpenText },
+  { title: 'Riwayat Pemeriksaan', icon: FileText, path: '/laporan' },
+  { title: 'Resep Kacamata', icon: Glasses, path: '/laporan' },
+  { title: 'Hasil AI Mata', icon: Eye, path: '/laporan' },
+  { title: 'Edukasi Mata', icon: BookOpenText, path: '/laporan' },
 ];
 
 function PrimeLogo() {
@@ -158,7 +159,7 @@ function ActionCard({ action, onClick }: { action: QuickAction; onClick: (title:
   );
 }
 
-function QueueCard() {
+function QueueCard({ onDetailClick }: { onDetailClick: () => void }) {
   return (
     <article className="rounded-prime-xl border border-prime-line bg-white p-5 shadow-prime-card">
       <div className="flex items-start justify-between gap-4">
@@ -181,7 +182,8 @@ function QueueCard() {
       </div>
       <button
         type="button"
-      className="prime-interactive prime-cta-dark group mt-5 inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 text-[14px]"
+        onClick={onDetailClick}
+        className="prime-interactive prime-cta-dark group mt-5 inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 text-[14px]"
       >
         Lihat Detail
         <ChevronRight className="prime-link-arrow h-4 w-4" aria-hidden="true" />
@@ -223,7 +225,14 @@ export function BerandaPage() {
     navigate('/ai');
   };
 
-  const handleQuickMenu = (title: string) => {
+  const handleQueueDetail = () => {
+    navigate('/booking');
+    setFeedback('Detail antrean dibuka.');
+  };
+
+  const handleQuickMenu = ({ title, path }: QuickMenu) => {
+    navigate(path);
+
     if (title === 'Edukasi Mata') {
       const result = completeMission(userId, 'read-eye-tips');
       setFeedback(result.message);
@@ -271,7 +280,7 @@ export function BerandaPage() {
         </p>
       )}
 
-      <QueueCard />
+      <QueueCard onDetailClick={handleQueueDetail} />
       <AppointmentCard />
 
       <section className="rounded-prime-xl border border-prime-line bg-white p-5 shadow-prime-card" aria-labelledby="quick-menu-heading">
@@ -279,19 +288,23 @@ export function BerandaPage() {
           Menu Cepat
         </h2>
         <div className="mt-4 grid grid-cols-4 gap-2.5">
-          {quickMenus.map(({ title, icon: Icon }) => (
+          {quickMenus.map((menu) => {
+            const { title, icon: Icon } = menu;
+
+            return (
             <button
               key={title}
               type="button"
-              onClick={() => handleQuickMenu(title)}
-              className="prime-interactive group rounded-[20px] border border-prime-line bg-prime-surface p-2.5 text-center hover:bg-white focus:outline-none focus:ring-4 focus:ring-prime-gold/20"
+              onClick={() => handleQuickMenu(menu)}
+              className="prime-interactive prime-touch-feedback group rounded-[20px] border border-prime-line bg-prime-surface p-2.5 text-center hover:bg-white focus:outline-none focus:ring-4 focus:ring-prime-gold/20"
             >
               <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-prime-gold-dark shadow-[0_8px_18px_rgba(177,151,49,0.10)] transition group-hover:scale-105">
                 <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
               </span>
               <span className="mt-2 block text-[11.5px] font-bold leading-snug text-prime-muted">{title}</span>
             </button>
-          ))}
+            );
+          })}
         </div>
       </section>
 

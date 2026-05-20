@@ -13,7 +13,7 @@ export function BottomNavigation() {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-[430px] px-3 pb-[calc(10px+env(safe-area-inset-bottom))]"
+      className="bottom-navigation px-3 pb-[calc(10px+env(safe-area-inset-bottom))]"
     >
       <div className="rounded-[28px] border border-prime-line bg-white/95 p-2 shadow-[0_-18px_45px_rgba(35,31,32,0.10)] backdrop-blur-xl">
         <ul className="grid grid-cols-5 gap-1">
