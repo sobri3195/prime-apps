@@ -1,5 +1,5 @@
 import { AlertTriangle, Camera, FlipHorizontal2, Loader2, ShieldAlert, X } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   MEDICAL_DISCLAIMER,
   PRIVACY_MESSAGE,
@@ -25,6 +25,8 @@ export function AIScreeningPage() {
   const [cameraMode, setCameraMode] = useState<CameraMode>("front");
   const [selectedEye, setSelectedEye] = useState<SelectedEye>("keduanya");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [stagedImage, setStagedImage] = useState<string | null>(null);
   const [imageQuality, setImageQuality] = useState<ImageQuality | null>(null);
@@ -32,16 +34,115 @@ export function AIScreeningPage() {
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const activeStreamRef = useRef<MediaStream | null>(null);
 
-  async function requestCameraPermission() { try { await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); setCameraPermission("granted"); return "granted" as const; } catch { setCameraPermission("denied"); return "denied" as const; } }
-  async function openEyeCamera() { const permission = await requestCameraPermission(); if (permission === "granted") setIsCameraOpen(true); }
-  function closeEyeCamera() { setIsCameraOpen(false); }
+  function stopCameraStream() {
+    const stream = activeStreamRef.current;
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      activeStreamRef.current = null;
+    }
+    setCameraStream(null);
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }
+
+  function mapCameraError(error: unknown) {
+    if (!(error instanceof DOMException)) return "Kamera tidak bisa dibuka. Silakan coba lagi.";
+    if (error.name === "NotAllowedError") return "Izin kamera ditolak. Aktifkan izin kamera di pengaturan browser/perangkat.";
+    if (error.name === "NotFoundError") return "Kamera tidak ditemukan pada perangkat ini.";
+    if (error.name === "NotReadableError") return "Kamera sedang digunakan aplikasi lain. Tutup aplikasi lain lalu coba kembali.";
+    if (error.name === "OverconstrainedError") return "Konfigurasi kamera tidak didukung pada perangkat ini.";
+    return "Terjadi kendala saat membuka kamera. Silakan coba lagi.";
+  }
+
+  async function openEyeCamera() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraPermission("error");
+      setCameraError("Browser ini tidak mendukung akses kamera (getUserMedia).");
+      return;
+    }
+    setCameraError(null);
+    setIsCameraOpen(true);
+  }
+  function closeEyeCamera() {
+    setIsCameraOpen(false);
+    stopCameraStream();
+  }
   function switchCamera() { setCameraMode((p) => (p === "front" ? "back" : "front")); }
-  function captureEyePhoto() { setStagedImage("https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=900"); }
+  function captureEyePhoto() {
+    const video = videoRef.current;
+    if (!video || !cameraStream) {
+      setCameraError("Preview kamera belum siap. Coba buka ulang kamera.");
+      return;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    if (!canvas.width || !canvas.height) {
+      setCameraError("Preview kamera gagal tampil. Silakan tutup lalu buka ulang kamera.");
+      return;
+    }
+    canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    setStagedImage(canvas.toDataURL("image/jpeg", 0.92));
+  }
   function retakePhoto() { setStagedImage(null); setCapturedImage(null); setImageQuality(null); setCameraAnalysis(null); }
   function validateImageQuality(): ImageQuality { return ["good", "medium", "poor"][Math.floor(Math.random() * 3)] as ImageQuality; }
   function analyzeCameraImageMock(quality: ImageQuality): CameraAnalysis { return { imageQuality: quality, rednessDetected: quality !== "poor", swellingDetected: Math.random() > 0.6, wateryEyeDetected: Math.random() > 0.5, dischargeDetected: Math.random() > 0.75, eyelidIssueDetected: Math.random() > 0.65, visualNote: "Kamera AI Mata mendeteksi kemungkinan kemerahan ringan. Hasil ini bersifat terbatas dan perlu dikonfirmasi oleh dokter mata." } as CameraAnalysis & { imageQuality: ImageQuality }; }
   function useCapturedPhoto() { if (!stagedImage) return; setCapturedImage(stagedImage); const quality = validateImageQuality(); setImageQuality(quality); setCameraAnalysis(analyzeCameraImageMock(quality)); setStagedImage(null); closeEyeCamera(); }
+
+  useEffect(() => {
+    if (!isCameraOpen) {
+      stopCameraStream();
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function startCamera() {
+      try {
+        stopCameraStream();
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: cameraMode === "front" ? "user" : { ideal: "environment" } },
+        });
+        if (isCancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        setCameraPermission("granted");
+        setCameraStream(stream);
+        activeStreamRef.current = stream;
+
+        const video = videoRef.current;
+        if (!video) {
+          setCameraPermission("error");
+          setCameraError("Elemen preview kamera tidak ditemukan.");
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        video.srcObject = stream;
+        video.muted = true;
+        video.playsInline = true;
+        video.autoplay = true;
+        await video.play();
+      } catch (error) {
+        const message = mapCameraError(error);
+        setCameraPermission(error instanceof DOMException && error.name === "NotAllowedError" ? "denied" : "error");
+        setCameraError(message);
+        stopCameraStream();
+      }
+    }
+
+    void startCamera();
+
+    return () => {
+      isCancelled = true;
+      stopCameraStream();
+    };
+  }, [isCameraOpen, cameraMode]);
 
   const canAnalyze = useMemo(() => complaintText.trim() || selectedSymptoms.length > 0 || Boolean(capturedImage), [complaintText, selectedSymptoms, capturedImage]);
   function analyzeEyeComplaint() {
@@ -62,7 +163,7 @@ export function AIScreeningPage() {
 
     <div className="rounded-[26px] bg-white p-4 shadow-sm"><p className="text-lg font-bold">Kamera AI Mata</p><p className="text-sm text-prime-muted">Ambil foto mata langsung dari kamera perangkat untuk membantu screening visual awal.</p><p className="mt-1 text-xs text-prime-muted">Foto tidak diambil dari galeri. Kamera hanya digunakan saat pasien membuka fitur ini.</p><button onClick={openEyeCamera} className="mt-3 rounded-2xl bg-prime-gold px-4 py-2 text-white">Buka Kamera AI Mata</button></div>
 
-    {isCameraOpen && <div className="rounded-[26px] bg-black p-4 text-white"><div className="mb-3 flex justify-between"><button onClick={closeEyeCamera}><X /></button><button onClick={switchCamera} className="rounded-xl border border-white/40 px-3 py-1"><FlipHorizontal2 className="mr-1 inline" size={16} />Ganti Kamera</button></div><div className="h-52 rounded-[24px] border-4 border-prime-gold/70" /><video ref={videoRef} className="hidden" /><p className="mt-3 text-center text-xs">Posisikan mata di dalam frame • Gunakan pencahayaan yang cukup • Pastikan foto tidak buram • Jangan gunakan flash terlalu dekat</p><div className="mt-3 grid grid-cols-3 gap-2">{(["kanan", "kiri", "keduanya"] as SelectedEye[]).map((eye) => <button key={eye} onClick={() => setSelectedEye(eye)} className={`rounded-xl py-2 text-xs ${selectedEye === eye ? "bg-prime-gold" : "bg-white/15"}`}>Mata {eye}</button>)}</div><div className="mt-4 flex gap-2"><button onClick={captureEyePhoto} className="flex-1 rounded-2xl bg-prime-gold py-2">Ambil Foto Mata</button><button onClick={closeEyeCamera} className="rounded-2xl border border-white/40 px-3">Tutup Kamera</button></div></div>}
+    {isCameraOpen && <div className="rounded-[26px] bg-black p-4 text-white"><div className="mb-3 flex justify-between"><button onClick={closeEyeCamera}><X /></button><button onClick={switchCamera} className="rounded-xl border border-white/40 px-3 py-1"><FlipHorizontal2 className="mr-1 inline" size={16} />Ganti Kamera</button></div><div className="overflow-hidden rounded-[24px] border-4 border-prime-gold/70 bg-black"><video ref={videoRef} playsInline autoPlay muted className="h-52 w-full object-cover" /></div>{cameraError && <div className="mt-3 rounded-xl bg-red-500/20 px-3 py-2 text-xs text-red-100">{cameraError}</div>}<p className="mt-3 text-center text-xs">Posisikan mata di dalam frame • Gunakan pencahayaan yang cukup • Pastikan foto tidak buram • Jangan gunakan flash terlalu dekat</p><div className="mt-3 grid grid-cols-3 gap-2">{(["kanan", "kiri", "keduanya"] as SelectedEye[]).map((eye) => <button key={eye} onClick={() => setSelectedEye(eye)} className={`rounded-xl py-2 text-xs ${selectedEye === eye ? "bg-prime-gold" : "bg-white/15"}`}>Mata {eye}</button>)}</div><div className="mt-4 flex gap-2"><button onClick={captureEyePhoto} className="flex-1 rounded-2xl bg-prime-gold py-2">Ambil Foto Mata</button><button onClick={closeEyeCamera} className="rounded-2xl border border-white/40 px-3">Tutup Kamera</button></div></div>}
 
     {stagedImage && <div className="rounded-[26px] bg-white p-4"><img src={stagedImage} className="h-56 w-full rounded-3xl object-cover" /><div className="mt-3 grid grid-cols-2 gap-2"><button onClick={retakePhoto} className="rounded-2xl border py-2">Ulangi Foto</button><button onClick={useCapturedPhoto} className="rounded-2xl bg-prime-gold py-2 text-white">Gunakan Foto Ini</button></div></div>}
     {capturedImage && imageQuality && <div className="rounded-[26px] bg-[#FFF7E0] p-4"><p className="font-semibold">{imageQuality === "poor" ? "Foto belum cukup jelas untuk screening awal. Silakan ambil ulang dengan pencahayaan lebih baik dan posisi mata lebih dekat." : "Foto sudah cukup jelas untuk screening awal."}</p><button onClick={imageQuality === "poor" ? retakePhoto : analyzeEyeComplaint} className="mt-3 rounded-2xl bg-prime-gold px-4 py-2 text-white">{imageQuality === "poor" ? "Ambil Ulang Foto" : "Analisa dengan AI Mata"}</button></div>}
