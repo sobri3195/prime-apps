@@ -132,7 +132,7 @@ function ActionCard({ action, onClick }: { action: QuickAction; onClick: (title:
   const Icon = action.icon;
   const cardClass = action.primary
     ? 'prime-gold-card shadow-prime-gold'
-    : 'border-prime-line bg-white text-prime-ink shadow-prime-card';
+    : 'prime-ai-card-hover border-prime-line bg-white text-prime-ink shadow-prime-card';
   const iconClass = action.primary
     ? 'bg-white/20 text-white ring-1 ring-white/25'
     : 'bg-prime-teal-soft text-prime-teal ring-1 ring-prime-teal/10';
@@ -142,16 +142,16 @@ function ActionCard({ action, onClick }: { action: QuickAction; onClick: (title:
     <button
       type="button"
       onClick={() => onClick(action.title)}
-      className={`prime-interactive group flex min-h-[168px] flex-col rounded-prime-lg border p-4 text-left focus:outline-none focus:ring-4 focus:ring-prime-gold/20 ${cardClass}`}
+      className={`prime-interactive prime-touch-feedback group flex min-h-[168px] flex-col rounded-prime-lg border p-4 text-left transition-all duration-300 ease-out ${cardClass}`}
     >
       <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-[18px] transition group-hover:scale-105 ${iconClass}`}>
         <Icon className="h-5 w-5" aria-hidden="true" />
       </span>
       <span className="text-[15px] font-extrabold leading-5 tracking-[-0.01em]">{action.title}</span>
       <span className={`mt-2 text-[13px] font-medium leading-5 ${descriptionClass}`}>{action.description}</span>
-      <span className={`mt-auto inline-flex items-center gap-1 pt-4 text-[12px] font-bold ${action.primary ? 'text-white' : 'text-prime-gold-dark'}`}>
+      <span className={`prime-link-cta mt-auto inline-flex items-center gap-1 pt-4 text-[12px] font-bold ${action.primary ? 'text-white' : 'text-prime-gold-dark'}`}>
         Mulai
-        <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden="true" />
+        <ChevronRight className="prime-link-arrow h-4 w-4 transition" aria-hidden="true" />
       </span>
     </button>
   );
@@ -180,10 +180,10 @@ function QueueCard() {
       </div>
       <button
         type="button"
-      className="prime-interactive mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-prime-ink px-4 py-2 text-[14px] font-bold text-white shadow-prime-soft hover:bg-prime-black focus:outline-none focus:ring-4 focus:ring-prime-ink/20"
+      className="prime-interactive prime-cta-dark group mt-5 inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 text-[14px]"
       >
         Lihat Detail
-        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+        <ChevronRight className="prime-link-arrow h-4 w-4" aria-hidden="true" />
       </button>
     </article>
   );

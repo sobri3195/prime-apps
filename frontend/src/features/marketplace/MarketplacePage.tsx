@@ -639,7 +639,7 @@ function MiniCart({
           type="button"
           onClick={onCheckout}
           disabled={isEmpty}
-          className="inline-flex items-center gap-2 rounded-[16px] bg-prime-gold px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-prime-gold/20 transition focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:scale-95 disabled:cursor-not-allowed disabled:bg-prime-black/15 disabled:text-prime-muted disabled:shadow-none"
+          className="inline-flex items-center gap-2 rounded-[16px] prime-cta-gold px-4 py-2.5 text-sm disabled:cursor-not-allowed disabled:bg-prime-black/15 disabled:text-prime-muted disabled:shadow-none"
         >
           <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Checkout
         </button>
