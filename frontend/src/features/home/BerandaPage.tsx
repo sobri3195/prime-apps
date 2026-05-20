@@ -15,6 +15,7 @@ import {
   Stethoscope,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DailyWinsCard } from '../gamification/GamificationComponents';
 import { POINT_RULES, useGamificationStore } from '../gamification/gamificationStore';
 
@@ -142,7 +143,7 @@ function ActionCard({ action, onClick }: { action: QuickAction; onClick: (title:
     <button
       type="button"
       onClick={() => onClick(action.title)}
-      className={`prime-interactive prime-touch-feedback group flex min-h-[168px] flex-col rounded-prime-lg border p-4 text-left transition-all duration-300 ease-out ${cardClass}`}
+      className={`prime-interactive prime-touch-feedback group flex min-h-[168px] cursor-pointer flex-col rounded-prime-lg border p-4 text-left transition-all duration-300 ease-out ${cardClass}`}
     >
       <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-[18px] transition group-hover:scale-105 ${iconClass}`}>
         <Icon className="h-5 w-5" aria-hidden="true" />
@@ -210,16 +211,16 @@ function AppointmentCard() {
 export function BerandaPage() {
   const [feedback, setFeedback] = useState('');
   const { addPoints, completeMission } = useGamificationStore();
+  const navigate = useNavigate();
   const userId = 'patient-001';
 
   const handleQuickAction = (title: string) => {
     if (title === 'Booking Pemeriksaan') {
-      addPoints(userId, 'booking_created', POINT_RULES.booking_created, 'Booking pemeriksaan dari Beranda');
-      setFeedback('Booking pemeriksaan dicatat. +25 poin Daily Wins.');
+      navigate('/booking');
       return;
     }
 
-    setFeedback('Silakan lanjut ke AI Mata. Misi AI Screening akan selesai setelah form dikirim.');
+    navigate('/ai');
   };
 
   const handleQuickMenu = (title: string) => {
