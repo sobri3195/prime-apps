@@ -1,7 +1,7 @@
 export type RiskLevel = "Rendah" | "Sedang" | "Tinggi" | "Darurat";
 
 export type DurationOption = "Hari ini" | "1–3 hari" | "4–7 hari" | "Lebih dari 1 minggu";
-export type CameraPermission = "idle" | "granted" | "denied";
+export type CameraPermission = "idle" | "granted" | "denied" | "error";
 export type CameraMode = "front" | "back";
 export type SelectedEye = "kanan" | "kiri" | "keduanya";
 export type ImageQuality = "good" | "medium" | "poor";
