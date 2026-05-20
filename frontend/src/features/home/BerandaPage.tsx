@@ -131,7 +131,7 @@ function HealthSummaryCard() {
 function ActionCard({ action, onClick }: { action: QuickAction; onClick: (title: string) => void }) {
   const Icon = action.icon;
   const cardClass = action.primary
-    ? 'border-prime-gold-dark bg-prime-gold-dark text-white shadow-prime-gold'
+    ? 'prime-gold-card shadow-prime-gold'
     : 'border-prime-line bg-white text-prime-ink shadow-prime-card';
   const iconClass = action.primary
     ? 'bg-white/20 text-white ring-1 ring-white/25'
@@ -142,7 +142,7 @@ function ActionCard({ action, onClick }: { action: QuickAction; onClick: (title:
     <button
       type="button"
       onClick={() => onClick(action.title)}
-      className={`group flex min-h-[168px] flex-col rounded-prime-lg border p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-prime-lift focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:translate-y-0 ${cardClass}`}
+      className={`prime-interactive group flex min-h-[168px] flex-col rounded-prime-lg border p-4 text-left focus:outline-none focus:ring-4 focus:ring-prime-gold/20 ${cardClass}`}
     >
       <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-[18px] transition group-hover:scale-105 ${iconClass}`}>
         <Icon className="h-5 w-5" aria-hidden="true" />
@@ -180,7 +180,7 @@ function QueueCard() {
       </div>
       <button
         type="button"
-        className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-prime-ink px-4 py-2 text-[14px] font-bold text-white shadow-prime-soft transition duration-200 hover:-translate-y-0.5 hover:bg-prime-black focus:outline-none focus:ring-4 focus:ring-prime-ink/20 active:translate-y-0"
+      className="prime-interactive mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-prime-ink px-4 py-2 text-[14px] font-bold text-white shadow-prime-soft hover:bg-prime-black focus:outline-none focus:ring-4 focus:ring-prime-ink/20"
       >
         Lihat Detail
         <ChevronRight className="h-4 w-4" aria-hidden="true" />
@@ -283,7 +283,7 @@ export function BerandaPage() {
               key={title}
               type="button"
               onClick={() => handleQuickMenu(title)}
-              className="group rounded-[20px] border border-prime-line bg-prime-surface p-2.5 text-center transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-prime-soft focus:outline-none focus:ring-4 focus:ring-prime-gold/20 active:translate-y-0"
+              className="prime-interactive group rounded-[20px] border border-prime-line bg-prime-surface p-2.5 text-center hover:bg-white focus:outline-none focus:ring-4 focus:ring-prime-gold/20"
             >
               <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-prime-gold-dark shadow-[0_8px_18px_rgba(177,151,49,0.10)] transition group-hover:scale-105">
                 <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
