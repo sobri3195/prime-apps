@@ -160,3 +160,97 @@ button:disabled,
 .marketplace-scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+
+@media (hover: hover) {
+  .prime-touch-feedback:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(35, 31, 32, 0.14);
+  }
+}
+
+.prime-touch-feedback:active {
+  transform: scale(0.98);
+}
+
+.prime-focus-visible:focus-visible,
+button:focus-visible,
+a:focus-visible,
+[role='button']:focus-visible {
+  outline: 2px solid #b19731;
+  outline-offset: 3px;
+}
+
+.prime-cta-gold {
+  min-height: 44px;
+  border-radius: 16px;
+  background: #b19731;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 10px 20px rgba(177, 151, 49, 0.22);
+  transition: all 240ms ease;
+}
+
+@media (hover: hover) {
+  .prime-cta-gold:hover:not(:disabled) {
+    background: #9e8628;
+    transform: translateY(-2px);
+    box-shadow: 0 18px 30px rgba(177, 151, 49, 0.3);
+  }
+}
+
+.prime-cta-gold:active:not(:disabled) {
+  transform: scale(0.98);
+  box-shadow: 0 8px 16px rgba(35, 31, 32, 0.14);
+}
+
+.prime-cta-dark {
+  min-height: 44px;
+  border-radius: 16px;
+  background: #231f20;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 10px 20px rgba(35, 31, 32, 0.18);
+  transition: all 220ms ease;
+}
+@media (hover: hover) {
+  .prime-cta-dark:hover:not(:disabled) {
+    background: #3a3334;
+    transform: translateY(-2px);
+    box-shadow: 0 18px 30px rgba(35, 31, 32, 0.22);
+  }
+}
+.prime-cta-dark:active:not(:disabled) { transform: scale(0.98); }
+
+.prime-link-cta { transition: color 220ms ease, text-decoration-color 220ms ease; }
+@media (hover: hover) {
+  .prime-link-cta:hover { color: #d2b24e; text-decoration: underline; text-underline-offset: 3px; }
+  .prime-link-cta:hover .prime-link-arrow { transform: translateX(3px); }
+}
+.prime-link-cta:active { transform: scale(0.98); }
+.prime-link-arrow { transition: transform 220ms ease; }
+
+.prime-gold-card {
+  background: #b19731;
+  border-color: #b19731;
+  color: #ffffff;
+  box-shadow: 0 14px 28px rgba(177, 151, 49, 0.24);
+}
+@media (hover: hover) {
+  .prime-gold-card:hover {
+    background: #9e8628;
+    border-color: #8f7722;
+    transform: translateY(-3px);
+    box-shadow: 0 22px 40px rgba(143, 119, 34, 0.34);
+  }
+}
+
+.prime-ai-card-hover { transition: all 260ms ease; }
+@media (hover: hover) {
+  .prime-ai-card-hover:hover {
+    background: #fff8e8;
+    border-color: #b19731;
+    transform: translateY(-3px);
+    box-shadow: 0 16px 32px rgba(177, 151, 49, 0.18);
+  }
+}
