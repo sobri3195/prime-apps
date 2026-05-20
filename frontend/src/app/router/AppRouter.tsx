@@ -5,6 +5,7 @@ import { AiPage } from '@/features/ai-eye/AiPage';
 import { MarketplacePage } from '@/features/marketplace/MarketplacePage';
 import { ProfilPage } from '@/features/profile/ProfilPage';
 import { LaporanPage } from '@/features/reports/LaporanPage';
+import { BookingPage } from '@/features/booking/BookingPage';
 
 export function AppRouter() {
   return (
@@ -13,6 +14,7 @@ export function AppRouter() {
         <Route index element={<Navigate to="/beranda" replace />} />
         <Route path="beranda" element={<BerandaPage />} />
         <Route path="ai" element={<AiPage />} />
+        <Route path="booking" element={<BookingPage />} />
         <Route path="marketplace" element={<MarketplacePage />} />
         <Route path="profil" element={<ProfilPage />} />
         <Route path="laporan" element={<LaporanPage />} />

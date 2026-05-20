@@ -33,6 +33,7 @@ export function AIScreeningPage() {
   const [cameraAnalysis, setCameraAnalysis] = useState<CameraAnalysis | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [feedback, setFeedback] = useState("");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const activeStreamRef = useRef<MediaStream | null>(null);
 
@@ -151,6 +152,7 @@ export function AIScreeningPage() {
     setTimeout(() => {
       const result = analyzeEyeScreening({ complaintText, selectedSymptoms, duration, painScore, cameraResult: { imageQuality, selectedEye, analysis: cameraAnalysis } });
       setAnalysisResult(result);
+      setFeedback("AI Screening selesai. +25 poin Daily Wins.");
       setIsAnalyzing(false);
     }, 900);
   }
@@ -169,6 +171,8 @@ export function AIScreeningPage() {
     {capturedImage && imageQuality && <div className="rounded-[26px] bg-[#FFF7E0] p-4"><p className="font-semibold">{imageQuality === "poor" ? "Foto belum cukup jelas untuk screening awal. Silakan ambil ulang dengan pencahayaan lebih baik dan posisi mata lebih dekat." : "Foto sudah cukup jelas untuk screening awal."}</p><button onClick={imageQuality === "poor" ? retakePhoto : analyzeEyeComplaint} className="mt-3 rounded-2xl bg-prime-gold px-4 py-2 text-white">{imageQuality === "poor" ? "Ambil Ulang Foto" : "Analisa dengan AI Mata"}</button></div>}
 
     <div className="rounded-[26px] bg-white p-4 shadow-sm space-y-3"><textarea value={complaintText} onChange={(e) => setComplaintText(e.target.value)} className="w-full rounded-2xl border p-3" placeholder="Contoh: mata merah, buram, nyeri, gatal, keluar cairan, silau, atau penglihatan menurun." /><div className="grid grid-cols-2 gap-2">{symptoms.map((s) => <button key={s} onClick={() => setSelectedSymptoms((p) => (p.includes(s) ? p.filter((x) => x !== s) : [...p, s]))} className={`rounded-xl border px-2 py-2 text-xs ${selectedSymptoms.includes(s) ? "bg-prime-gold text-white" : "bg-white"}`}>{s}</button>)}</div><div className="grid grid-cols-2 gap-2">{durations.map((d) => <button key={d} onClick={() => setDuration(d)} className={`rounded-xl border px-2 py-2 text-xs ${duration === d ? "bg-[#FFE7AB]/50" : ""}`}>{d}</button>)}</div><div><input type="range" min={0} max={10} value={painScore} onChange={(e) => setPainScore(Number(e.target.value))} className="w-full" /><div className="flex justify-between text-xs"><span>Tidak nyeri</span><span>Nyeri berat</span></div></div><button onClick={analyzeEyeComplaint} disabled={!canAnalyze || isAnalyzing} className="prime-cta-dark w-full py-3 disabled:opacity-40">{isAnalyzing ? <span><Loader2 className="mr-2 inline animate-spin" size={16} />AI Mata PRIME sedang menganalisa keluhan Anda...</span> : "Analisa Sekarang"}</button></div>
+
+    {feedback && <p role="status" className="rounded-[20px] border border-prime-teal/15 bg-prime-teal-soft px-4 py-3 text-[13px] font-bold leading-5 text-prime-ink">{feedback}</p>}
 
     {analysisResult && <article className="rounded-[26px] bg-white p-4 shadow-sm"><p className="text-lg font-bold">Hasil Screening</p><p className="mt-1 text-sm">Tingkat risiko: <b>{analysisResult.riskLevel}</b> ({analysisResult.riskScore}/100)</p><p className="mt-2 text-sm">{analysisResult.summary}</p><p className="mt-2 text-sm"><b>Hasil Kamera AI Mata:</b> {analysisResult.cameraSummary}</p><p className="mt-2 text-sm"><b>Kemungkinan kategori:</b> {analysisResult.possibleCategories.join(", ")}</p><p className="mt-2 text-sm"><b>Alasan:</b> {analysisResult.explanation}</p><p className="mt-2 text-sm"><b>Rekomendasi:</b> {analysisResult.recommendation}</p><div className="mt-3 grid grid-cols-2 gap-2"><button className="rounded-2xl bg-prime-gold py-2 text-white">{analysisResult.ctaPrimary}</button><button className="rounded-2xl border py-2">{analysisResult.ctaSecondary}</button></div><p className="mt-3 text-xs text-prime-muted"><AlertTriangle className="mr-1 inline" size={14} />AI tidak memberi diagnosis final atau resep obat. Untuk red flag, segera ke dokter mata/IGD.</p></article>}
   </section>;
