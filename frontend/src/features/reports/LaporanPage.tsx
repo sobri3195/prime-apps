@@ -1,232 +1,69 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Activity,
-  Brain,
-  CalendarCheck2,
-  ChevronRight,
-  CircleAlert,
-  Download,
-  Droplets,
-  Eye,
-  FileText,
-  ScanSearch,
-  Send,
-  Share2,
-  Stethoscope,
-  X,
-} from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Activity, CalendarCheck2, ChevronRight, CircleAlert, Download, Eye, Info, PhoneCall } from 'lucide-react';
+import { Card, EmptyState, ErrorState, LoadingSkeleton, Modal, Toast } from './components/ui';
+import type { DataTypeKey, ExaminationHistoryItem, LastAiResult, PatientReport, PeriodKey, PressureTrendItem, VisionTrendItem } from './components/reportTypes';
 
-type PeriodKey = '1bulan' | '3bulan' | '6bulan' | '1tahun';
-type ModalKey = 'downloadOptions' | 'healthStatus' | 'metric' | 'visionPoint' | 'pressurePoint' | 'historyDetail' | 'aiDetail' | null;
+const periods: { key: PeriodKey; label: string }[] = [{ key: '1bulan', label: '1 Bulan' }, { key: '3bulan', label: '3 Bulan' }, { key: '6bulan', label: '6 Bulan' }, { key: '1tahun', label: '1 Tahun' }];
+const dataTypes: { key: DataTypeKey; label: string }[] = [{ key: 'semua', label: 'Semua' }, { key: 'dokter', label: 'Pemeriksaan Dokter' }, { key: 'ai', label: 'AI Screening' }, { key: 'resep', label: 'Resep Kacamata' }];
+const bookingSchema = z.object({ examType: z.string().min(1), date: z.string().min(1), time: z.string().min(1), complaint: z.string().min(3), whatsapp: z.string().min(9) });
 
-const periodOptions: Array<{ key: PeriodKey; label: string }> = [
-  { key: '1bulan', label: '1 Bulan' },
-  { key: '3bulan', label: '3 Bulan' },
-  { key: '6bulan', label: '6 Bulan' },
-  { key: '1tahun', label: '1 Tahun' },
-];
-
-const visionDataset: Record<PeriodKey, Array<{ date: string; label: string; right: number; left: number; note: string }>> = {
-  '1bulan': [{ date: '12 Mei 2026', label: '12 Mei', right: 6.9, left: 6.12, note: 'Stabil, lanjutkan tetes air mata buatan.' }],
-  '3bulan': [
-    { date: '10 Mar 2026', label: 'Mar', right: 6.12, left: 6.15, note: 'Keluhan buram muncul.' },
-    { date: '20 Apr 2026', label: 'Apr', right: 6.1, left: 6.13, note: 'Perbaikan ringan pasca koreksi.' },
-    { date: '12 Mei 2026', label: 'Mei', right: 6.9, left: 6.12, note: 'Stabil namun perlu pemantauan.' },
-  ],
-  '6bulan': [
-    { date: '15 Des 2025', label: 'Des', right: 6.14, left: 6.18, note: 'Pemeriksaan awal.' },
-    { date: '12 Jan 2026', label: 'Jan', right: 6.13, left: 6.16, note: 'Mata kiri menurun ringan.' },
-    { date: '08 Feb 2026', label: 'Feb', right: 6.12, left: 6.15, note: 'Kontrol berkala.' },
-    { date: '10 Mar 2026', label: 'Mar', right: 6.12, left: 6.15, note: 'Keluhan meningkat saat layar lama.' },
-    { date: '20 Apr 2026', label: 'Apr', right: 6.1, left: 6.13, note: 'Respon baik.' },
-    { date: '12 Mei 2026', label: 'Mei', right: 6.9, left: 6.12, note: 'Perlu pemantauan.' },
-  ],
-  '1tahun': [
-    { date: 'Jun 2025', label: 'Jun', right: 6.16, left: 6.2, note: 'Baseline.' },
-    { date: 'Sep 2025', label: 'Sep', right: 6.15, left: 6.18, note: 'Stabil.' },
-    { date: 'Des 2025', label: 'Des', right: 6.14, left: 6.18, note: 'Keluhan ringan.' },
-    { date: 'Mar 2026', label: 'Mar', right: 6.12, left: 6.15, note: 'Monitoring.' },
-    { date: 'Mei 2026', label: 'Mei', right: 6.9, left: 6.12, note: 'Perlu pemantauan.' },
-  ],
-};
-
-const pressureDataset: Record<PeriodKey, Array<{ label: string; value: number }>> = {
-  '1bulan': [{ label: 'Mei', value: 18 }],
-  '3bulan': [{ label: 'Mar', value: 21 }, { label: 'Apr', value: 19 }, { label: 'Mei', value: 18 }],
-  '6bulan': [{ label: 'Des', value: 17 }, { label: 'Jan', value: 18 }, { label: 'Feb', value: 22 }, { label: 'Mar', value: 21 }, { label: 'Apr', value: 19 }, { label: 'Mei', value: 18 }],
-  '1tahun': [{ label: 'Jun', value: 20 }, { label: 'Agu', value: 24 }, { label: 'Okt', value: 26 }, { label: 'Des', value: 22 }],
-};
-
-const historyItems = [
-  { date: '12 Mei 2026', title: 'Pemeriksaan Mata Lengkap', meta: 'Dokter: dr. Sp.M', status: 'Selesai', result: 'Visus OD 6/9, OS 6/12; tekanan 18 mmHg.' },
-  { date: '20 April 2026', title: 'Pemeriksaan Minus / Silinder', meta: 'Dokter: dr. Sp.M', status: 'Selesai', result: 'Perubahan refraksi ringan; evaluasi kacamata.' },
-  { date: '10 Maret 2026', title: 'AI Screening Mata', meta: 'Analisis berbasis AI', status: 'Tersimpan', result: 'Risiko sedang, perlu konsultasi dokter mata.' },
-];
-
-const pressureStatus = (value: number) => (value >= 10 && value <= 21 ? 'Dalam batas aman' : value <= 25 ? 'Perlu pemantauan' : 'Perlu evaluasi dokter');
+const report: PatientReport = { patientName: 'Budi Santosa', medicalRecordNumber: 'RM-2026-00128', lastVisitDate: '2026-05-12', doctorName: 'dr. Sp.M', healthStatus: 'Perlu Pemantauan', rightVision: '6/9', leftVision: '6/12', intraocularPressure: 18, dryEyeRisk: 'Sedang' };
+const visionByPeriod: Record<PeriodKey, VisionTrendItem[]> = { '1bulan': [{ month: 'Mei', date: '2026-05-12', rightEye: 9, leftEye: 6.2 }], '3bulan': [{ month: 'Mar', date: '2026-03-10', rightEye: 6, leftEye: 6 }, { month: 'Apr', date: '2026-04-20', rightEye: 6, leftEye: 6.5 }, { month: 'Mei', date: '2026-05-12', rightEye: 9, leftEye: 6.2 }], '6bulan': [{ month: 'Des', date: '2025-12-15', rightEye: 6.2, leftEye: 6.8 }, { month: 'Feb', date: '2026-02-08', rightEye: 6.3, leftEye: 6.4 }, { month: 'Mei', date: '2026-05-12', rightEye: 9, leftEye: 6.2 }], '1tahun': [] };
+const pressureByPeriod: Record<PeriodKey, PressureTrendItem[]> = { '1bulan': [{ month: 'Mei', value: 18 }], '3bulan': [{ month: 'Mar', value: 21 }, { month: 'Apr', value: 19 }, { month: 'Mei', value: 18 }], '6bulan': [{ month: 'Des', value: 17 }, { month: 'Jan', value: 18 }, { month: 'Feb', value: 22 }, { month: 'Mar', value: 21 }, { month: 'Apr', value: 19 }, { month: 'Mei', value: 18 }], '1tahun': [] };
+const history: ExaminationHistoryItem[] = [{ id: 'exam-001', date: '2026-05-12', title: 'Pemeriksaan Mata Lengkap', doctor: 'dr. Sp.M', status: 'Selesai', type: 'dokter', complaint: 'Mata buram dan mudah lelah', rightVision: '6/9', leftVision: '6/12', intraocularPressure: 18, diagnosis: 'Kelainan refraksi ringan mata kiri.', recommendation: 'Kontrol ulang 1 bulan lagi' }];
+const lastAi: LastAiResult = { id: 'ai-001', date: '2026-03-10', riskLevel: 'Sedang', symptoms: ['Mata buram', 'Mata merah'], painLevel: 3, duration: '1-3 hari', summary: 'AI menyarankan pemeriksaan lanjutan jika keluhan menetap.', analysisReason: 'Pola gejala menunjukkan iritasi dan kelelahan mata.', recommendation: 'Kurangi screen time, gunakan pelumas mata, konsultasi dokter jika >3 hari.' };
 
 export function LaporanPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<PeriodKey>('3bulan');
-  const [selectedModal, setSelectedModal] = useState<ModalKey>(null);
-  const [selectedDetail, setSelectedDetail] = useState<any>(null);
+  const [period, setPeriod] = useState<PeriodKey>('3bulan');
+  const [dataType, setDataType] = useState<DataTypeKey>('semua');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [toast, setToast] = useState('');
+  const [modal, setModal] = useState<string | null>(null);
+  const [selected, setSelected] = useState<any>(null);
+  const form = useForm<z.infer<typeof bookingSchema>>({ resolver: zodResolver(bookingSchema), defaultValues: { examType: 'Pemeriksaan Mata Lengkap' } });
 
-  const visionData = visionDataset[activeTab];
-  const pressureData = pressureDataset[activeTab];
-  const pressureBadge = pressureStatus(pressureData[pressureData.length - 1]?.value ?? 18);
+  useEffect(() => { const t = setTimeout(() => setLoading(false), 700); return () => clearTimeout(t); }, []);
+  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2200); return () => clearTimeout(t); }, [toast]);
 
-  const chartPoints = useMemo(() => {
-    if (!visionData.length) return { right: '', left: '' };
-    const max = Math.max(...visionData.map((v) => Math.max(v.right, v.left)));
-    const min = Math.min(...visionData.map((v) => Math.min(v.right, v.left)));
-    const range = Math.max(max - min, 0.4);
-    const mapPoints = (key: 'right' | 'left') =>
-      visionData.map((point, i) => `${(i / Math.max(visionData.length - 1, 1)) * 100},${80 - ((point[key] - min) / range) * 64}`).join(' ');
-    return { right: mapPoints('right'), left: mapPoints('left') };
-  }, [visionData]);
+  const vision = visionByPeriod[period]; const pressure = pressureByPeriod[period];
+  const filteredHistory = history.filter((h) => dataType === 'semua' || h.type === dataType);
+  const filteredVision = dataType === 'resep' ? [] : vision;
+  const filteredPressure = dataType === 'resep' || dataType === 'ai' ? [] : pressure;
+  const maxPressure = Math.max(...(filteredPressure.map((v) => v.value)), 21);
+  const pressureWarn = filteredPressure.some((p) => p.value < 10 || p.value > 21);
 
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(''), 2600);
-    return () => clearTimeout(t);
-  }, [toast]);
+  const onDownload = async () => { setToast('Menyiapkan laporan...'); await new Promise((r) => setTimeout(r, 600)); setModal('preview'); };
+  const generatePreview = () => window.print();
+  const onBooking = form.handleSubmit((values) => { localStorage.setItem('prime-booking-report', JSON.stringify(values)); setModal(null); setToast('Booking pemeriksaan berhasil dibuat.'); navigate('/beranda'); });
 
-  const openModal = (key: ModalKey, detail?: any) => {
-    setSelectedDetail(detail ?? null);
-    setSelectedModal(key);
-  };
+  const visionText = useMemo(() => filteredVision.map((v) => `${v.month}: kanan ${v.rightEye}, kiri ${v.leftEye}`).join('; '), [filteredVision]);
+  if (loading) return <section className='space-y-4 pb-[120px]'>{Array.from({ length: 5 }).map((_, i) => <LoadingSkeleton key={i} />)}</section>;
+  if (error) return <ErrorState message={error} onRetry={() => setError('')} />;
 
-  return (
-    <section className="space-y-5 pb-[calc(120px+env(safe-area-inset-bottom))]">
-      <header className="rounded-[24px] bg-white p-5 shadow-[0_12px_28px_rgba(35,31,32,0.08)]">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-extrabold text-prime-black">Laporan Kesehatan Mata</h1>
-            <p className="mt-2 text-sm text-prime-black/70">Pantau kondisi mata Anda secara terstruktur dan mudah dibaca.</p>
-          </div>
-          <button onClick={() => openModal('downloadOptions')} className="prime-interactive rounded-2xl bg-prime-cream/70 p-3 text-prime-gold">
-            <Download size={20} />
-          </button>
-        </div>
-      </header>
+  return <section className="space-y-4 pb-[calc(128px+env(safe-area-inset-bottom))]">
+    <Card><div className="flex justify-between gap-3"><div><h1 className="text-2xl font-extrabold">Laporan Kesehatan Mata</h1><p className="text-sm text-prime-black/70">Pantau kondisi mata Anda secara terstruktur dan mudah dibaca.</p></div><button aria-label='Unduh laporan' onClick={onDownload} className='rounded-xl bg-prime-cream p-3'><Download size={18}/></button></div></Card>
+    <Card className='bg-gradient-to-br from-[#2a2520] to-[#8f7626] text-white'><p className='flex items-center gap-2 text-sm'><CircleAlert size={16}/>Status Kesehatan Mata: {report.healthStatus}</p><p className='mt-2 text-sm'>Hasil terakhir menunjukkan visus mata kiri lebih rendah dan perlu pemantauan berkala.</p><div className='mt-3 grid grid-cols-2 gap-2 text-xs'><p>Kunjungan: {report.lastVisitDate}</p><p>Dokter: {report.doctorName}</p><p>RM: {report.medicalRecordNumber}</p><p>Status laporan: Aktif</p></div><button onClick={onDownload} className='mt-4 min-h-[44px] rounded-xl bg-white px-4 text-prime-black'>Unduh Laporan</button></Card>
+    <div className='grid grid-cols-2 gap-3'>{[['Visus Mata Kanan', report.rightVision, 'Ketajaman penglihatan', 'Normal'], ['Visus Mata Kiri', report.leftVision, 'Ketajaman penglihatan', 'Perlu kontrol'], ['Tekanan Intraokular', `${report.intraocularPressure} mmHg`, 'Tekanan bola mata', 'Dalam batas aman'], ['Risiko Mata Kering', report.dryEyeRisk, 'Kemungkinan keluhan mata kering berdasarkan gejala', 'Pantau gejala']].map((m) => <button key={m[0]} onClick={() => { setSelected(m); setModal('metric'); }} className='min-h-[120px] rounded-2xl bg-white p-3 text-left shadow-sm'><p className='text-xs text-prime-black/60'>{m[0]}</p><p className='text-lg font-bold'>{m[1]}</p><p className='text-xs'>{m[3]}</p><span className='mt-1 inline-flex items-center gap-1 text-[11px] text-prime-black/65'><Info size={12}/>{m[2]}</span></button>)}</div>
+    <Card><h2 className='text-lg font-bold'>Filter Laporan</h2><div className='mt-2 flex flex-wrap gap-2'>{periods.map((p)=><button key={p.key} onClick={()=>setPeriod(p.key)} className={`min-h-[44px] rounded-xl px-3 text-xs ${period===p.key?'bg-prime-gold text-white':'bg-prime-cream'}`}>{p.label}</button>)}</div><div className='mt-2 flex flex-wrap gap-2'>{dataTypes.map((p)=><button key={p.key} onClick={()=>setDataType(p.key)} className={`min-h-[44px] rounded-xl px-3 text-xs ${dataType===p.key?'bg-prime-black text-white':'bg-prime-cream'}`}>{p.label}</button>)}</div></Card>
+    <Card><h2 className='text-lg font-bold'>Grafik Perkembangan Visus</h2><p className='text-sm text-prime-black/70'>Perbandingan hasil pemeriksaan mata kanan dan kiri dari waktu ke waktu.</p>{filteredVision.length===0?<EmptyState message='Belum ada data pemeriksaan pada periode ini.'/>:<div className='mt-3 rounded-2xl bg-[#fffaf0] p-3'><div className='grid grid-cols-3 gap-2 text-xs'>{filteredVision.map((v)=><button key={v.date} onClick={()=>{setSelected(v);setModal('vision')}} className='rounded-xl bg-white p-2'><p>{v.month}</p><p>K {v.rightEye}</p><p>Ki {v.leftEye}</p></button>)}</div><p className='mt-2 text-xs'>Ringkasan: {visionText}</p></div>}</Card>
+    <Card><div className='flex items-center justify-between'><h2 className='text-lg font-bold'>Tekanan Intraokular</h2><span className='rounded-full bg-prime-cream px-3 py-1 text-xs'>Dalam batas aman</span></div><p className='text-sm text-prime-black/70'>Tekanan bola mata dipantau untuk membantu deteksi risiko glaukoma.</p>{filteredPressure.length===0?<EmptyState message='Belum ada data tekanan intraokular pada periode ini.'/>:<div className='mt-3 flex items-end gap-2 rounded-2xl bg-[#fffaf0] p-3 min-h-[170px]'>{filteredPressure.map((b)=><button key={b.month} onClick={()=>{setSelected(b);setModal('pressure')}} className='flex flex-1 flex-col items-center'><span className='text-[10px]'>{b.value}</span><div className='w-full rounded-t-lg bg-prime-gold' style={{height:`${(b.value/maxPressure)*100}px`}}/><p className='text-xs'>{b.month}</p></button>)}</div>}{pressureWarn && <p className='mt-2 text-sm text-amber-700'>Tekanan intraokular perlu evaluasi dokter.</p>}</Card>
+    <Card><h2 className='text-lg font-bold'>Riwayat Pemeriksaan</h2>{filteredHistory.length===0?<EmptyState message='Belum ada riwayat pemeriksaan.'/>:filteredHistory.map((h)=><button key={h.id} onClick={()=>{setSelected(h);setModal('history')}} className='mt-2 flex w-full items-center rounded-xl bg-prime-cream/30 p-3 text-left'><div className='flex-1'><p className='text-xs'>{h.date}</p><p className='font-semibold'>{h.title}</p><p className='text-xs'>{h.doctor} • {h.status}</p></div><ChevronRight size={16}/></button>)}</Card>
+    <Card><h2 className='text-lg font-bold'>Hasil AI Mata Terakhir</h2><p className='text-sm'>{lastAi.date} • Risiko {lastAi.riskLevel} • Keluhan {lastAi.symptoms[0]}</p><button onClick={()=>setModal('ai')} className='mt-3 min-h-[44px] w-full rounded-xl bg-prime-black text-white'>Lihat Detail AI</button></Card>
+    <Card><h2 className='text-lg font-bold'>Rekomendasi</h2><p className='text-sm'>Lakukan pemeriksaan ulang 1 bulan lagi atau lebih cepat jika keluhan bertambah.</p><div className='mt-3 grid grid-cols-2 gap-2'><button onClick={()=>setModal('booking')} className='min-h-[44px] rounded-xl bg-prime-gold text-white'>Booking Pemeriksaan</button><a href='https://wa.me/6281234567890' className='min-h-[44px] rounded-xl bg-prime-cream inline-flex items-center justify-center gap-2'><PhoneCall size={14}/>Hubungi Klinik</a></div></Card>
 
-      <article onClick={() => openModal('healthStatus')} className="prime-interactive cursor-pointer rounded-[24px] bg-gradient-to-br from-[#231F20] via-[#7f6922] to-[#B19731] p-5 text-white">
-        <div className="flex items-center gap-2 text-sm"><CircleAlert size={16} />Status Kesehatan Mata</div>
-        <p className="mt-2 text-xl font-bold">Perlu Pemantauan</p>
-        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-          <div className="space-y-2 rounded-2xl bg-white/12 p-3">
-            <p className="text-white/80">Kunjungan terakhir</p><p className="font-semibold">12 Mei 2026</p>
-            <p className="text-white/80">Nomor rekam medis</p><p className="font-semibold">RM-2026-00128</p>
-          </div>
-          <div className="space-y-2 rounded-2xl bg-white/12 p-3">
-            <p className="text-white/80">Dokter pemeriksa</p><p className="font-semibold">dr. Sp.M</p>
-            <p className="text-white/80">Status laporan</p><p className="font-semibold">Perlu Pemantauan</p>
-          </div>
-        </div>
-        <button className="prime-interactive prime-cta-gold mt-4 px-4 py-2">Unduh Laporan</button>
-      </article>
-
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { icon: Eye, label: 'Visus Mata Kanan', value: '6/9', detail: 'Ketajaman penglihatan sedikit menurun dari normal.' },
-          { icon: Eye, label: 'Visus Mata Kiri', value: '6/12', detail: 'Perlu pemantauan lanjutan untuk mata kiri.' },
-          { icon: Activity, label: 'Tekanan Intraokular', value: '18 mmHg', detail: 'Tekanan saat ini masih dalam batas aman.' },
-          { icon: Droplets, label: 'Risiko Mata Kering', value: 'Sedang', detail: 'Perbanyak istirahat layar dan hidrasi mata.' },
-        ].map((item) => (
-          <button key={item.label} onClick={() => openModal('metric', item)} className="prime-interactive rounded-[20px] bg-white p-4 text-left shadow-sm">
-            <item.icon size={16} className="text-prime-gold" />
-            <p className="mt-2 text-xs text-prime-black/65">{item.label}</p>
-            <p className="mt-1 text-lg font-bold text-prime-black">{item.value}</p>
-          </button>
-        ))}
-      </div>
-
-      <section className="rounded-[24px] bg-white p-5">
-        <h2 className="text-lg font-bold">Grafik Perkembangan Visus</h2>
-        <p className="text-sm text-prime-black/65">Perbandingan hasil pemeriksaan dari waktu ke waktu</p>
-        <div className="mt-3 flex flex-wrap gap-2 rounded-2xl bg-prime-cream/45 p-1.5">
-          {periodOptions.map((period) => (
-            <button key={period.key} onClick={() => setActiveTab(period.key)} className={`rounded-xl px-3 py-2 text-xs font-semibold ${activeTab === period.key ? 'bg-prime-gold text-white' : 'text-prime-black/70 hover:bg-white'}`}>
-              {period.label}
-            </button>
-          ))}
-        </div>
-        <div className="mt-4 rounded-2xl bg-[#fffaf0] p-3">
-          <svg viewBox="0 0 100 86" className="h-44 w-full">
-            <polyline fill="none" stroke="#B19731" strokeWidth="1.8" points={chartPoints.right} />
-            <polyline fill="none" stroke="#231F20" strokeWidth="1.8" points={chartPoints.left} />
-            {visionData.map((p, i) => {
-              const x = (i / Math.max(visionData.length - 1, 1)) * 100;
-              return (
-                <g key={p.date}>
-                  <circle cx={x} cy={parseFloat(chartPoints.right.split(' ')[i]?.split(',')[1] || '0')} r="1.8" fill="#B19731" onClick={() => openModal('visionPoint', p)} className="cursor-pointer" />
-                  <circle cx={x} cy={parseFloat(chartPoints.left.split(' ')[i]?.split(',')[1] || '0')} r="1.8" fill="#231F20" onClick={() => openModal('visionPoint', p)} className="cursor-pointer" />
-                </g>
-              );
-            })}
-          </svg>
-          <div className="mt-2 flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-prime-gold" />Mata kanan</span>
-            <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-prime-black" />Mata kiri</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-[24px] bg-white p-5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Tekanan Intraokular</h2>
-          <span className="rounded-full bg-prime-cream px-3 py-1 text-xs font-semibold text-prime-black">{pressureBadge}</span>
-        </div>
-        <div className="mt-4 flex min-h-[170px] items-end gap-2 rounded-2xl bg-[#fffaf0] p-4">
-          {pressureData.map((bar) => (
-            <button key={bar.label} onClick={() => openModal('pressurePoint', bar)} className="prime-interactive flex flex-1 flex-col items-center justify-end gap-2">
-              <div className="w-full rounded-t-xl bg-prime-gold" style={{ height: `${Math.max(bar.value * 4, 64)}px` }} />
-              <span className="text-[11px] font-semibold">{bar.label}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-bold text-prime-black">Riwayat Pemeriksaan</h2>
-        {historyItems.map((item) => (
-          <button key={item.title + item.date} onClick={() => openModal('historyDetail', item)} className="prime-interactive flex w-full items-center rounded-[20px] bg-white p-4 text-left">
-            <div className="flex-1">
-              <p className="text-xs text-prime-black/60">{item.date}</p>
-              <p className="mt-1 font-bold text-prime-black">{item.title}</p>
-              <p className="text-sm text-prime-black/75">{item.meta}</p>
-              <p className="mt-1 text-xs font-semibold text-prime-gold">Status: {item.status}</p>
-            </div>
-            <ChevronRight size={16} className="text-prime-black/50" />
-          </button>
-        ))}
-      </section>
-
-      <section className="rounded-[24px] bg-white p-5">
-        <h2 className="text-lg font-bold">Hasil AI Mata Terakhir</h2>
-        <p className="mt-2 text-sm text-prime-black/75">Risiko: Sedang • Keluhan: Mata buram dan merah. AI menyarankan pemeriksaan lanjutan.</p>
-        <button onClick={() => openModal('aiDetail')} className="prime-interactive prime-cta-dark mt-4 w-full px-4 py-2">Lihat Detail AI</button>
-      </section>
-
-      <section className="rounded-[24px] bg-white p-5">
-        <h2 className="text-lg font-bold">Rekomendasi</h2>
-        <p className="mt-2 text-sm text-prime-black/75">Lakukan pemeriksaan ulang 1 bulan lagi atau lebih cepat jika keluhan bertambah.</p>
-        <button onClick={() => navigate('/booking', { state: { service: 'Pemeriksaan Mata Lengkap' } })} className="prime-interactive prime-cta-gold mt-4 w-full px-4 py-3 text-white">Booking Pemeriksaan</button>
-      </section>
-
-      {selectedModal && <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-4" onClick={() => setSelectedModal(null)}><div className="max-h-[85vh] w-full max-w-[410px] overflow-auto rounded-[24px] bg-white p-4" onClick={(e) => e.stopPropagation()}><div className="mb-3 flex items-center justify-between"><h3 className="font-bold">Detail</h3><button onClick={() => setSelectedModal(null)} className="rounded-xl p-1.5 hover:bg-prime-cream/40"><X size={18} /></button></div>
-        {selectedModal === 'metric' && <p className="text-sm">{selectedDetail?.detail}</p>}
-        {selectedModal === 'pressurePoint' && <p className="text-sm">{selectedDetail?.label}: {selectedDetail?.value} mmHg ({pressureStatus(selectedDetail?.value || 0)})</p>}
-        {selectedModal === 'visionPoint' && <p className="text-sm">{selectedDetail?.date} • Mata kanan {selectedDetail?.right} • Mata kiri {selectedDetail?.left}</p>}
-        {selectedModal === 'healthStatus' && <p className="text-sm">Status kesehatan saat ini: Perlu Pemantauan. Dokter pemeriksa dr. Sp.M, kunjungan terakhir 12 Mei 2026.</p>}
-        {selectedModal === 'historyDetail' && <p className="text-sm">{selectedDetail?.result}</p>}
-        {selectedModal === 'downloadOptions' && <div className="space-y-2">{[['Unduh PDF Laporan Lengkap', Download], ['Unduh Ringkasan Pemeriksaan', FileText], ['Kirim ke Email', Send], ['Bagikan ke Dokter', Share2]].map(([label, Icon]: any) => <button key={label} onClick={() => setToast(`${label} diproses.`)} className="prime-interactive flex w-full items-center gap-2 rounded-xl bg-prime-cream/40 p-3 text-sm"><Icon size={16} />{label}</button>)}</div>}
-        {selectedModal === 'aiDetail' && <div className="space-y-2 text-sm"><p>Risiko: Sedang</p><p>Keluhan: Mata buram, merah, mudah lelah.</p><p>Rekomendasi: Konsultasi dokter mata dan kurangi paparan layar lama.</p><p className="rounded-xl bg-prime-cream/40 p-3 text-xs">Disclaimer: Hasil AI bukan diagnosis final dan tidak menggantikan pemeriksaan dokter.</p><button onClick={() => navigate('/booking', { state: { service: 'Pemeriksaan Mata Lengkap' } })} className="prime-interactive prime-cta-gold w-full px-3 py-2 text-white">Booking Dokter Mata</button></div>}
-      </div></div>}
-
-      {toast && <div className="fixed bottom-[calc(112px+env(safe-area-inset-bottom))] left-1/2 z-50 -translate-x-1/2 rounded-xl bg-prime-black px-4 py-2 text-sm text-white">{toast}</div>}
-    </section>
-  );
+    {modal==='metric' && <Modal title='Penjelasan Metric' onClose={()=>setModal(null)}><p className='text-sm'>{selected?.[2]}</p></Modal>}
+    {modal==='vision' && <Modal title='Detail Titik Visus' onClose={()=>setModal(null)}><p className='text-sm'>{selected?.date} • Kanan {selected?.rightEye} • Kiri {selected?.leftEye}</p></Modal>}
+    {modal==='pressure' && <Modal title='Detail Tekanan' onClose={()=>setModal(null)}><p className='text-sm'>{selected?.month}: {selected?.value} mmHg</p></Modal>}
+    {modal==='history' && <Modal title='Detail Pemeriksaan' onClose={()=>setModal(null)}><div className='space-y-1 text-sm'><p>Tanggal: {selected?.date}</p><p>Jenis: {selected?.title}</p><p>Keluhan: {selected?.complaint}</p><p>Visus: {selected?.rightVision}/{selected?.leftVision}</p><p>TIO: {selected?.intraocularPressure} mmHg</p><p>Diagnosis: {selected?.diagnosis}</p><button onClick={onDownload} className='mt-2 rounded-lg bg-prime-cream px-3 py-2'>Unduh detail</button></div></Modal>}
+    {modal==='ai' && <Modal title='Detail AI' onClose={()=>setModal(null)}><div className='space-y-1 text-sm'><p>Keluhan: {lastAi.symptoms.join(', ')}</p><p>Durasi: {lastAi.duration}</p><p>Tingkat nyeri: {lastAi.painLevel}/10</p><p>Alasan analisis: {lastAi.analysisReason}</p><p>Rekomendasi: {lastAi.recommendation}</p><p className='rounded-xl bg-prime-cream/40 p-2 text-xs'>AI bukan diagnosis dokter.</p></div></Modal>}
+    {modal==='booking' && <Modal title='Booking Pemeriksaan' onClose={()=>setModal(null)}><form onSubmit={onBooking} className='space-y-2 text-sm'><input aria-label='Jenis pemeriksaan' {...form.register('examType')} className='w-full rounded-lg border p-2'/><input type='date' aria-label='Tanggal' {...form.register('date')} className='w-full rounded-lg border p-2'/><input type='time' aria-label='Jam' {...form.register('time')} className='w-full rounded-lg border p-2'/><input aria-label='Keluhan singkat' {...form.register('complaint')} className='w-full rounded-lg border p-2'/><input aria-label='Nomor WhatsApp' {...form.register('whatsapp')} className='w-full rounded-lg border p-2'/><button className='min-h-[44px] w-full rounded-xl bg-prime-gold text-white'>Konfirmasi booking</button></form></Modal>}
+    {modal==='preview' && <Modal title='Preview Laporan' onClose={()=>setModal(null)}><div className='space-y-1 text-sm'><p>Pasien: {report.patientName}</p><p>RM: {report.medicalRecordNumber}</p><p>Dokter: {report.doctorName}</p><p>Visus: {report.rightVision} / {report.leftVision}</p><p>TIO: {report.intraocularPressure} mmHg</p><p>Risiko mata kering: {report.dryEyeRisk}</p><p>Hasil AI: {lastAi.summary}</p><p>Rekomendasi: Kontrol 1 bulan lagi.</p><div className='grid grid-cols-3 gap-2 pt-2'><button onClick={()=>{generatePreview();setToast('Laporan berhasil diunduh.');}} className='rounded-lg bg-prime-gold px-2 py-2 text-white'>Unduh PDF</button><button onClick={()=>setToast('Fitur bagikan diproses.')} className='rounded-lg bg-prime-cream px-2 py-2'>Bagikan</button><button onClick={()=>setModal(null)} className='rounded-lg bg-prime-black px-2 py-2 text-white'>Tutup</button></div></div></Modal>}
+    {toast && <Toast text={toast}/>} 
+  </section>;
 }
