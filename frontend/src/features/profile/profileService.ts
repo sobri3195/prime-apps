@@ -6,6 +6,7 @@ export type PatientProfile = {
   birthDate: string;
   gender: string;
   address: string;
+  insurance?: string;
   medicalRecordNumber: string;
   role: string;
   status: 'Aktif' | 'Kontrol Berkala';
@@ -38,7 +39,7 @@ const key = 'prime.profile.state.v1';
 
 const seed = {
   patientProfile: {
-    id: 'patient-001', fullName: 'Muhammad Sobri Maulana', phone: '+6281234567890', email: 'sobri.maulana@email.com', birthDate: '1992-03-21', gender: 'Laki-laki', address: 'Jl. Melati Indah No. 23, Makassar', medicalRecordNumber: 'RM-2026-00128', role: 'Pasien Klinik Utama Prime', status: 'Aktif',
+    id: 'patient-001', fullName: 'Muhammad Sobri Maulana', phone: '+6281234567890', email: 'sobri.maulana@email.com', birthDate: '1992-03-21', gender: 'Laki-laki', address: 'Jl. Melati Indah No. 23, Makassar', medicalRecordNumber: 'RM-2026-00128', role: 'Pasien Klinik Utama Prime', status: 'Aktif', insurance: 'BPJS Kesehatan',
   } as PatientProfile,
   familyMembers: [
     { id: 'f1', name: 'Siti Aminah', relationship: 'Ibu', phone: '+628119000111', birthDate: '1968-02-11', gender: 'Perempuan', medicalRecordNumber: 'RM-2026-00110', status: 'Aktif', history: 'Kontrol mata kering', address: 'Makassar' },
