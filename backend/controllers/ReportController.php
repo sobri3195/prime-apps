@@ -1,0 +1,6 @@
+<?php
+class ReportController {
+public static function me(): void { $u=$GLOBALS['auth_user']['id']; $db=Database::connection(); $p=$db->prepare('SELECT u.name,u.email,p.* FROM users u JOIN patients p ON p.user_id=u.id WHERE u.id=?');$p->execute([$u]); $patient=$p->fetch(); $h=$db->prepare('SELECT * FROM medical_reports WHERE patient_id=? ORDER BY visit_date DESC'); $h->execute([$patient['id']]); $history=$h->fetchAll(); $last=$history[0]??null; Response::json(true,'Data berhasil dimuat',['patient'=>$patient,'health_status'=>'Perlu Pemantauan','last_visit'=>$last,'metrics'=>$last?['right_vision'=>$last['right_vision'],'left_vision'=>$last['left_vision'],'intraocular_pressure'=>$last['intraocular_pressure'],'dry_eye_risk'=>$last['dry_eye_risk']]:(object)[],'vision_trend'=>$history,'pressure_trend'=>$history,'history'=>$history,'last_ai_result'=>null]); }
+public static function show($id): void { $s=Database::connection()->prepare('SELECT * FROM medical_reports WHERE id=?');$s->execute([$id]); Response::json(true,'Data berhasil dimuat',$s->fetch()); }
+public static function download(): void { Response::json(true,'Preview laporan berhasil dibuat',['download_url'=>null,'html'=>'<html><body><h1>Laporan PRIME Apps</h1></body></html>']); }
+}
