@@ -1,0 +1,5 @@
+<?php
+class PatientController {
+    public static function me(): void { $id=$GLOBALS['auth_user']['id']; $db=Database::connection(); $s=$db->prepare('SELECT u.id as user_id,u.name,u.email,u.phone,u.role,p.* FROM users u JOIN patients p ON p.user_id=u.id WHERE u.id=?'); $s->execute([$id]); Response::json(true,'Data berhasil dimuat',$s->fetch()); }
+    public static function updateMe(): void { $id=$GLOBALS['auth_user']['id']; $d=Request::json(); $db=Database::connection(); $db->prepare('UPDATE users SET name=?,email=?,phone=?,updated_at=NOW() WHERE id=?')->execute([$d['name'],$d['email'],$d['phone'],$id]); $db->prepare('UPDATE patients SET birth_date=?,gender=?,insurance=?,address=?,updated_at=NOW() WHERE user_id=?')->execute([$d['birth_date']??null,$d['gender']??null,$d['insurance']??null,$d['address']??null,$id]); $db->prepare('INSERT INTO audit_logs (user_id,action,entity,entity_id,ip_address,user_agent,created_at) VALUES (?,?,?,?,?,?,NOW())')->execute([$id,'update_profil','patients',$id,$_SERVER['REMOTE_ADDR']??null,$_SERVER['HTTP_USER_AGENT']??null]); self::me(); }
+}

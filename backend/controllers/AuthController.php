@@ -1,0 +1,7 @@
+<?php
+class AuthController {
+    public static function register(): void { $d=Request::json(); $e=Validator::required($d,['name','email','password']); if($e||!Validator::email($d['email'])) Response::json(false,'Validasi gagal',null,$e?:['email'=>'Email tidak valid'],422); $u=AuthService::register($d); $t=Auth::generateToken(['id'=>$u['id'],'role'=>$u['role'],'email'=>$u['email']]); Response::json(true,'Register berhasil',['user'=>$u,'token'=>$t],[],201); }
+    public static function login(): void { $d=Request::json(); $db=Database::connection(); $s=$db->prepare('SELECT * FROM users WHERE email=? LIMIT 1'); $s->execute([$d['email']??'']); $u=$s->fetch(); if(!$u||!password_verify($d['password']??'',$u['password'])) Response::json(false,'Email atau password salah',null,[],401); $t=Auth::generateToken(['id'=>$u['id'],'role'=>$u['role'],'email'=>$u['email']]); $db->prepare('INSERT INTO audit_logs (user_id,action,entity,entity_id,ip_address,user_agent,created_at) VALUES (?,?,?,?,?,?,NOW())')->execute([$u['id'],'login','users',$u['id'],$_SERVER['REMOTE_ADDR']??null,$_SERVER['HTTP_USER_AGENT']??null]); unset($u['password']); Response::json(true,'Login berhasil',['user'=>$u,'token'=>$t]); }
+    public static function me(): void { $id=$GLOBALS['auth_user']['id']; $s=Database::connection()->prepare('SELECT id,name,email,phone,role,status,created_at,updated_at FROM users WHERE id=?'); $s->execute([$id]); Response::json(true,'Data berhasil dimuat',$s->fetch()); }
+    public static function logout(): void { Response::json(true,'Logout berhasil',(object)[]); }
+}
