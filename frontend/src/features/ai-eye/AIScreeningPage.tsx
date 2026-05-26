@@ -1,179 +1,100 @@
-import { AlertTriangle, Camera, FlipHorizontal2, Loader2, ShieldAlert, X } from "lucide-react";
+import { AlertTriangle, Camera, Loader2, RotateCcw, ShieldCheck, ShieldAlert, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  MEDICAL_DISCLAIMER,
-  PRIVACY_MESSAGE,
-  analyzeEyeScreening,
-  type AIAnalysisResult,
-  type CameraAnalysis,
-  type CameraMode,
-  type CameraPermission,
-  type DurationOption,
-  type ImageQuality,
-  type SelectedEye,
-} from "@/features/ai-eye/AIAnalysisEngine";
+import { useNavigate } from "react-router-dom";
+import { z } from "zod";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { analyzeEyeScreening, type DurationOption } from "@/features/ai-eye/AIAnalysisEngine";
 
 const symptoms = ["Mata merah", "Mata gatal", "Mata berair", "Mata kering", "Nyeri mata", "Pandangan buram", "Silau", "Sakit kepala", "Keluar kotoran mata", "Penglihatan mendadak menurun", "Melihat kilatan cahaya", "Riwayat trauma mata"];
+const emergencySymptoms = ["Penglihatan mendadak menurun", "Melihat kilatan cahaya", "Riwayat trauma mata"];
 const durations: DurationOption[] = ["Hari ini", "1–3 hari", "4–7 hari", "Lebih dari 1 minggu"];
 
+const schema = z.object({
+  complaintText: z.string().max(300),
+  selectedSymptoms: z.array(z.string()),
+  duration: z.enum(["Hari ini", "1–3 hari", "4–7 hari", "Lebih dari 1 minggu"], { required_error: "Pilih durasi keluhan." }),
+  painScore: z.number().min(0).max(10),
+}).superRefine((data, ctx) => {
+  if (data.selectedSymptoms.length === 0 && data.complaintText.trim().length < 5) {
+    ctx.addIssue({ code: "custom", path: ["complaintText"], message: "Isi keluhan atau pilih minimal satu gejala." });
+  }
+});
+
+type FormData = z.infer<typeof schema>;
+
 export function AIScreeningPage() {
-  const [complaintText, setComplaintText] = useState("");
-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
-  const [duration, setDuration] = useState<DurationOption | "">("");
-  const [painScore, setPainScore] = useState(0);
-  const [cameraPermission, setCameraPermission] = useState<CameraPermission>("idle");
-  const [cameraMode, setCameraMode] = useState<CameraMode>("front");
-  const [selectedEye, setSelectedEye] = useState<SelectedEye>("keduanya");
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [stagedImage, setStagedImage] = useState<string | null>(null);
-  const [imageQuality, setImageQuality] = useState<ImageQuality | null>(null);
-  const [cameraAnalysis, setCameraAnalysis] = useState<CameraAnalysis | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [feedback, setFeedback] = useState("");
+  const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const activeStreamRef = useRef<MediaStream | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [cameraDenied, setCameraDenied] = useState(false);
+  const [cameraUnsupported, setCameraUnsupported] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [stagedImage, setStagedImage] = useState<string | null>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzeError, setAnalyzeError] = useState("");
+  const [toast, setToast] = useState("");
+  const [result, setResult] = useState<any>(null);
+  const [ackEmergency, setAckEmergency] = useState(false);
 
-  function stopCameraStream() {
-    const stream = activeStreamRef.current;
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      activeStreamRef.current = null;
-    }
-    setCameraStream(null);
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  }
+  const { control, watch, setValue, reset, handleSubmit, formState: { errors, isValid } } = useForm<FormData>({
+    resolver: zodResolver(schema), mode: "onChange",
+    defaultValues: { complaintText: "", selectedSymptoms: [], duration: undefined as never, painScore: 0 },
+  });
 
-  function mapCameraError(error: unknown) {
-    if (!(error instanceof DOMException)) return "Kamera tidak bisa dibuka. Silakan coba lagi.";
-    if (error.name === "NotAllowedError") return "Izin kamera ditolak. Aktifkan izin kamera di pengaturan browser/perangkat.";
-    if (error.name === "NotFoundError") return "Kamera tidak ditemukan pada perangkat ini.";
-    if (error.name === "NotReadableError") return "Kamera sedang digunakan aplikasi lain. Tutup aplikasi lain lalu coba kembali.";
-    if (error.name === "OverconstrainedError") return "Konfigurasi kamera tidak didukung pada perangkat ini.";
-    return "Terjadi kendala saat membuka kamera. Silakan coba lagi.";
-  }
-
-  async function openEyeCamera() {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraPermission("error");
-      setCameraError("Browser ini tidak mendukung akses kamera (getUserMedia).");
-      return;
-    }
-    setCameraError(null);
-    setIsCameraOpen(true);
-  }
-  function closeEyeCamera() {
-    setIsCameraOpen(false);
-    stopCameraStream();
-  }
-  function switchCamera() { setCameraMode((p) => (p === "front" ? "back" : "front")); }
-  function captureEyePhoto() {
-    const video = videoRef.current;
-    if (!video || !cameraStream) {
-      setCameraError("Preview kamera belum siap. Coba buka ulang kamera.");
-      return;
-    }
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    if (!canvas.width || !canvas.height) {
-      setCameraError("Preview kamera gagal tampil. Silakan tutup lalu buka ulang kamera.");
-      return;
-    }
-    canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
-    setStagedImage(canvas.toDataURL("image/jpeg", 0.92));
-  }
-  function retakePhoto() { setStagedImage(null); setCapturedImage(null); setImageQuality(null); setCameraAnalysis(null); }
-  function validateImageQuality(): ImageQuality { return ["good", "medium", "poor"][Math.floor(Math.random() * 3)] as ImageQuality; }
-  function analyzeCameraImageMock(quality: ImageQuality): CameraAnalysis { return { imageQuality: quality, rednessDetected: quality !== "poor", swellingDetected: Math.random() > 0.6, wateryEyeDetected: Math.random() > 0.5, dischargeDetected: Math.random() > 0.75, eyelidIssueDetected: Math.random() > 0.65, visualNote: "Kamera AI Mata mendeteksi kemungkinan kemerahan ringan. Hasil ini bersifat terbatas dan perlu dikonfirmasi oleh dokter mata." } as CameraAnalysis & { imageQuality: ImageQuality }; }
-  function useCapturedPhoto() { if (!stagedImage) return; setCapturedImage(stagedImage); const quality = validateImageQuality(); setImageQuality(quality); setCameraAnalysis(analyzeCameraImageMock(quality)); setStagedImage(null); closeEyeCamera(); }
+  const w = watch();
+  const hasEmergencySymptom = w.selectedSymptoms.some((s) => emergencySymptoms.includes(s));
 
   useEffect(() => {
-    if (!isCameraOpen) {
-      stopCameraStream();
-      return;
-    }
+    if (!cameraOpen) return;
+    if (!navigator.mediaDevices?.getUserMedia) { setCameraUnsupported(true); return; }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }).then((s) => {
+      setStream(s);
+      if (videoRef.current) videoRef.current.srcObject = s;
+    }).catch((err: DOMException) => {
+      if (err.name === "NotAllowedError") setCameraDenied(true); else setCameraUnsupported(true);
+      setCameraOpen(false);
+    });
+    return () => { stream?.getTracks().forEach((t) => t.stop()); };
+  }, [cameraOpen]);
 
-    let isCancelled = false;
-
-    async function startCamera() {
-      try {
-        stopCameraStream();
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: cameraMode === "front" ? "user" : { ideal: "environment" } },
-        });
-        if (isCancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-
-        setCameraPermission("granted");
-        setCameraStream(stream);
-        activeStreamRef.current = stream;
-
-        const video = videoRef.current;
-        if (!video) {
-          setCameraPermission("error");
-          setCameraError("Elemen preview kamera tidak ditemukan.");
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-
-        video.srcObject = stream;
-        video.muted = true;
-        video.playsInline = true;
-        video.autoplay = true;
-        await video.play();
-      } catch (error) {
-        const message = mapCameraError(error);
-        setCameraPermission(error instanceof DOMException && error.name === "NotAllowedError" ? "denied" : "error");
-        setCameraError(message);
-        stopCameraStream();
-      }
-    }
-
-    void startCamera();
-
-    return () => {
-      isCancelled = true;
-      stopCameraStream();
-    };
-  }, [isCameraOpen, cameraMode]);
-
-  const canAnalyze = useMemo(() => complaintText.trim() || selectedSymptoms.length > 0 || Boolean(capturedImage), [complaintText, selectedSymptoms, capturedImage]);
-  function analyzeEyeComplaint() {
-    if (!canAnalyze) return;
+  const onAnalyze = handleSubmit((data) => {
+    setAnalyzeError("");
     setIsAnalyzing(true);
     setTimeout(() => {
-      const result = analyzeEyeScreening({ complaintText, selectedSymptoms, duration, painScore, cameraResult: { imageQuality, selectedEye, analysis: cameraAnalysis } });
-      setAnalysisResult(result);
-      setFeedback("AI Screening selesai. +25 poin Daily Wins.");
-      setIsAnalyzing(false);
+      try {
+        setResult(analyzeEyeScreening(data));
+      } catch {
+        setAnalyzeError("Analisis gagal. Coba lagi.");
+      } finally { setIsAnalyzing(false); }
     }, 900);
-  }
+  });
 
-  return <section className="space-y-5 pb-28 font-[Montserrat]">
-    <header className="rounded-[28px] bg-gradient-to-br from-prime-black via-[#5f4d17] to-prime-gold p-6 text-white shadow-sm"><h1 className="text-3xl font-extrabold">AI Mata PRIME</h1><p className="mt-1 text-sm text-prime-cream">Screening awal kesehatan mata</p><p className="mt-3 text-sm">Analisa keluhan, gejala cepat, durasi, tingkat nyeri, dan foto mata opsional melalui kamera langsung di aplikasi.</p></header>
+  return <section className="space-y-4 pb-[120px]">
+    <header className="rounded-3xl bg-gradient-to-br from-[#3f320c] via-[#6a5217] to-[#b19731] p-5 text-white shadow-sm"><h1 className="text-2xl font-extrabold">AI Mata PRIME</h1><p className="text-sm text-[#f8ecd0]">Screening awal kesehatan mata</p><p className="mt-2 text-sm">Jawab beberapa pertanyaan untuk mendapatkan rekomendasi awal. AI tidak menggantikan diagnosis dokter.</p></header>
+    <div className="rounded-3xl border bg-white p-4 shadow-sm"><p className="font-bold"><ShieldCheck className="mr-2 inline" size={16}/>Catatan keamanan medis</p><p className="text-sm text-prime-muted mt-2">AI Mata PRIME hanya membantu screening awal dan edukasi. Hasil bukan diagnosis dokter.</p><p className="text-xs text-prime-muted mt-1">Data gejala dan foto hanya digunakan untuk membantu analisis awal.</p></div>
+    <div className="rounded-3xl border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{ackEmergency ? <div className="flex items-center justify-between"><span>Alert darurat sudah dibaca.</span><button onClick={()=>setAckEmergency(false)} className="text-xs underline">Lihat lagi</button></div> : <><p><ShieldAlert className="mr-1 inline" size={14}/>Segera ke IGD atau dokter mata bila mengalami penurunan penglihatan mendadak, nyeri hebat, trauma mata, kilatan cahaya, atau bayangan tirai.</p><button onClick={()=>setAckEmergency(true)} className="mt-2 rounded-xl border border-red-300 px-3 py-1 text-xs">Saya Mengerti</button></>}</div>
 
-    <div className="rounded-[26px] border border-prime-gold/20 bg-white p-4 shadow-sm"><p className="font-bold">Catatan keamanan medis</p><p className="text-sm text-prime-muted">{MEDICAL_DISCLAIMER}</p><p className="mt-2 rounded-2xl bg-[#FFE7AB]/35 p-2 text-xs">{PRIVACY_MESSAGE}</p></div>
-    <div className="rounded-[26px] border border-red-200 bg-red-50 p-3 text-xs text-red-700"><ShieldAlert className="mr-1 inline" size={14} />Penglihatan mendadak menurun, nyeri berat, trauma mata, kilatan cahaya, atau bayangan seperti tirai harus segera diperiksa oleh dokter mata atau IGD.</div>
+    <div className="rounded-3xl bg-white p-4 shadow-sm space-y-3"><p className="font-bold">Kamera AI Mata</p><button onClick={()=>setCameraOpen(true)} className="rounded-2xl bg-prime-gold px-4 py-2 text-white"><Camera className="mr-2 inline" size={16}/>Buka Kamera AI Mata</button>
+      {cameraDenied && <p className="text-sm text-red-600">Akses kamera ditolak. Anda tetap bisa melanjutkan screening tanpa foto.</p>}
+      {cameraUnsupported && <label className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm"><Upload size={16}/>Unggah foto mata<input type="file" accept="image/*" className="hidden" onChange={(e)=>{ const f=e.target.files?.[0]; if(f){ const r=new FileReader(); r.onload=()=>setCapturedImage(String(r.result)); r.readAsDataURL(f);} }}/></label>}
+      {cameraOpen && <div className="space-y-2"><video ref={videoRef} autoPlay playsInline className="h-56 w-full rounded-2xl bg-black object-cover"/><button onClick={()=>{ const v=videoRef.current; if(!v) return; const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d')?.drawImage(v,0,0); setStagedImage(c.toDataURL('image/jpeg')); }} className="rounded-xl bg-prime-gold px-3 py-2 text-white">Ambil Foto</button><button onClick={()=>setCameraOpen(false)} className="rounded-xl border px-3 py-2">Tutup</button></div>}
+      {stagedImage && <div className="space-y-2"><img src={stagedImage} className="h-52 w-full rounded-2xl object-cover"/><div className="grid grid-cols-2 gap-2"><button onClick={()=>{ setCapturedImage(stagedImage); setStagedImage(null); setCameraOpen(false); }} className="rounded-xl bg-prime-gold py-2 text-white">Gunakan Foto</button><button onClick={()=>setStagedImage(null)} className="rounded-xl border py-2">Ulangi Foto</button></div></div>}
+    </div>
 
-    <div className="rounded-[26px] bg-white p-4 shadow-sm"><p className="text-lg font-bold">Kamera AI Mata</p><p className="text-sm text-prime-muted">Ambil foto mata langsung dari kamera perangkat untuk membantu screening visual awal.</p><p className="mt-1 text-xs text-prime-muted">Foto tidak diambil dari galeri. Kamera hanya digunakan saat pasien membuka fitur ini.</p><button onClick={openEyeCamera} className="mt-3 rounded-2xl bg-prime-gold px-4 py-2 text-white">Buka Kamera AI Mata</button></div>
+    <form onSubmit={onAnalyze} className="rounded-3xl bg-white p-4 shadow-sm space-y-4">
+      <Controller control={control} name="complaintText" render={({ field }) => <div><label className="text-sm font-semibold">Keluhan utama</label><textarea {...field} placeholder="Contoh: mata merah, buram, nyeri, gatal, keluar cairan, silau" className="mt-1 h-28 w-full rounded-2xl border p-3" maxLength={300}/><p className="text-xs text-prime-muted text-right">{field.value.length}/300</p>{errors.complaintText && <p className="text-xs text-red-600">{errors.complaintText.message}</p>}</div>} />
+      <div><p className="text-sm font-semibold mb-2">Pilihan gejala</p><div className="grid grid-cols-2 gap-2">{symptoms.map((s)=><button key={s} type="button" onClick={()=>setValue("selectedSymptoms", w.selectedSymptoms.includes(s)?w.selectedSymptoms.filter(x=>x!==s):[...w.selectedSymptoms,s], { shouldValidate:true })} className={`min-h-[44px] rounded-xl border px-2 text-sm ${w.selectedSymptoms.includes(s)?"bg-prime-gold text-white":"bg-white"}`}>{s}</button>)}</div>{hasEmergencySymptom && <p className="mt-2 text-xs text-amber-700"><AlertTriangle className="mr-1 inline" size={14}/>Gejala ini perlu pemeriksaan dokter segera.</p>}</div>
+      <div><p className="text-sm font-semibold mb-2">Sejak kapan keluhan dirasakan?</p><div className="grid grid-cols-2 gap-2">{durations.map((d)=><button key={d} type="button" onClick={()=>setValue("duration", d, { shouldValidate:true })} className={`min-h-[44px] rounded-xl border text-sm ${w.duration===d?"bg-prime-gold-soft border-prime-gold":""}`}>{d}</button>)}</div>{errors.duration && <p className="text-xs text-red-600 mt-1">{errors.duration.message}</p>}</div>
+      <div><label className="text-sm font-semibold">Tingkat nyeri</label><p className="text-sm font-medium">Nyeri: {w.painScore}/10</p><Controller control={control} name="painScore" render={({ field }) => <input type="range" min={0} max={10} {...field} onChange={(e)=>field.onChange(Number(e.target.value))} className="w-full accent-prime-gold h-3"/>} /><div className="flex justify-between text-xs"><span>Tidak nyeri</span><span>Nyeri berat</span></div>{w.painScore >= 7 && <p className="text-xs text-amber-700">Nyeri berat sebaiknya segera diperiksa dokter mata.</p>}</div>
+      <button disabled={!isValid || isAnalyzing} className="prime-cta-dark w-full py-3 disabled:opacity-40">{isAnalyzing ? <><Loader2 className="mr-2 inline animate-spin" size={16}/>Menganalisis keluhan...</> : "Analisa Sekarang"}</button>
+      {!isValid && <p className="text-xs text-prime-muted">Lengkapi keluhan dan durasi untuk mulai analisis.</p>}
+    </form>
 
-    {isCameraOpen && <div className="rounded-[26px] bg-black p-4 text-white"><div className="mb-3 flex justify-between"><button onClick={closeEyeCamera}><X /></button><button onClick={switchCamera} className="rounded-xl border border-white/40 px-3 py-1"><FlipHorizontal2 className="mr-1 inline" size={16} />Ganti Kamera</button></div><div className="overflow-hidden rounded-[24px] border-4 border-prime-gold/70 bg-black"><video ref={videoRef} playsInline autoPlay muted className="h-52 w-full object-cover" /></div>{cameraError && <div className="mt-3 rounded-xl bg-red-500/20 px-3 py-2 text-xs text-red-100">{cameraError}</div>}<p className="mt-3 text-center text-xs">Posisikan mata di dalam frame • Gunakan pencahayaan yang cukup • Pastikan foto tidak buram • Jangan gunakan flash terlalu dekat</p><div className="mt-3 grid grid-cols-3 gap-2">{(["kanan", "kiri", "keduanya"] as SelectedEye[]).map((eye) => <button key={eye} onClick={() => setSelectedEye(eye)} className={`rounded-xl py-2 text-xs ${selectedEye === eye ? "bg-prime-gold" : "bg-white/15"}`}>Mata {eye}</button>)}</div><div className="mt-4 flex gap-2"><button onClick={captureEyePhoto} className="flex-1 rounded-2xl bg-prime-gold py-2">Ambil Foto Mata</button><button onClick={closeEyeCamera} className="rounded-2xl border border-white/40 px-3">Tutup Kamera</button></div></div>}
-
-    {stagedImage && <div className="rounded-[26px] bg-white p-4"><img src={stagedImage} className="h-56 w-full rounded-3xl object-cover" /><div className="mt-3 grid grid-cols-2 gap-2"><button onClick={retakePhoto} className="rounded-2xl border py-2">Ulangi Foto</button><button onClick={useCapturedPhoto} className="rounded-2xl bg-prime-gold py-2 text-white">Gunakan Foto Ini</button></div></div>}
-    {capturedImage && imageQuality && <div className="rounded-[26px] bg-[#FFF7E0] p-4"><p className="font-semibold">{imageQuality === "poor" ? "Foto belum cukup jelas untuk screening awal. Silakan ambil ulang dengan pencahayaan lebih baik dan posisi mata lebih dekat." : "Foto sudah cukup jelas untuk screening awal."}</p><button onClick={imageQuality === "poor" ? retakePhoto : analyzeEyeComplaint} className="mt-3 rounded-2xl bg-prime-gold px-4 py-2 text-white">{imageQuality === "poor" ? "Ambil Ulang Foto" : "Analisa dengan AI Mata"}</button></div>}
-
-    <div className="rounded-[26px] bg-white p-4 shadow-sm space-y-3"><textarea value={complaintText} onChange={(e) => setComplaintText(e.target.value)} className="w-full rounded-2xl border p-3" placeholder="Contoh: mata merah, buram, nyeri, gatal, keluar cairan, silau, atau penglihatan menurun." /><div className="grid grid-cols-2 gap-2">{symptoms.map((s) => <button key={s} onClick={() => setSelectedSymptoms((p) => (p.includes(s) ? p.filter((x) => x !== s) : [...p, s]))} className={`rounded-xl border px-2 py-2 text-xs ${selectedSymptoms.includes(s) ? "bg-prime-gold text-white" : "bg-white"}`}>{s}</button>)}</div><div className="grid grid-cols-2 gap-2">{durations.map((d) => <button key={d} onClick={() => setDuration(d)} className={`rounded-xl border px-2 py-2 text-xs ${duration === d ? "bg-[#FFE7AB]/50" : ""}`}>{d}</button>)}</div><div><input type="range" min={0} max={10} value={painScore} onChange={(e) => setPainScore(Number(e.target.value))} className="w-full" /><div className="flex justify-between text-xs"><span>Tidak nyeri</span><span>Nyeri berat</span></div></div><button onClick={analyzeEyeComplaint} disabled={!canAnalyze || isAnalyzing} className="prime-cta-dark w-full py-3 disabled:opacity-40">{isAnalyzing ? <span><Loader2 className="mr-2 inline animate-spin" size={16} />AI Mata PRIME sedang menganalisa keluhan Anda...</span> : "Analisa Sekarang"}</button></div>
-
-    {feedback && <p role="status" className="rounded-[20px] border border-prime-teal/15 bg-prime-teal-soft px-4 py-3 text-[13px] font-bold leading-5 text-prime-ink">{feedback}</p>}
-
-    {analysisResult && <article className="rounded-[26px] bg-white p-4 shadow-sm"><p className="text-lg font-bold">Hasil Screening</p><p className="mt-1 text-sm">Tingkat risiko: <b>{analysisResult.riskLevel}</b> ({analysisResult.riskScore}/100)</p><p className="mt-2 text-sm">{analysisResult.summary}</p><p className="mt-2 text-sm"><b>Hasil Kamera AI Mata:</b> {analysisResult.cameraSummary}</p><p className="mt-2 text-sm"><b>Kemungkinan kategori:</b> {analysisResult.possibleCategories.join(", ")}</p><p className="mt-2 text-sm"><b>Alasan:</b> {analysisResult.explanation}</p><p className="mt-2 text-sm"><b>Rekomendasi:</b> {analysisResult.recommendation}</p><div className="mt-3 grid grid-cols-2 gap-2"><button className="rounded-2xl bg-prime-gold py-2 text-white">{analysisResult.ctaPrimary}</button><button className="rounded-2xl border py-2">{analysisResult.ctaSecondary}</button></div><p className="mt-3 text-xs text-prime-muted"><AlertTriangle className="mr-1 inline" size={14} />AI tidak memberi diagnosis final atau resep obat. Untuk red flag, segera ke dokter mata/IGD.</p></article>}
+    {!result && !isAnalyzing && !analyzeError && <div className="rounded-3xl border border-dashed bg-white p-4 text-sm text-prime-muted">Belum ada hasil analisis. Isi form lalu klik Analisa Sekarang.</div>}
+    {analyzeError && <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{analyzeError}</div>}
+    {result && <article className="rounded-3xl bg-white p-4 shadow-sm space-y-2"><p className="font-bold text-lg">Hasil Analisis AI</p><p><b>Level Risiko:</b> {result.riskLevel}</p><p>{result.summary}</p><ul className="list-disc pl-5 text-sm"><li>Gejala utama: {w.selectedSymptoms.join(", ") || "Tidak dipilih"}</li><li>Durasi: {w.duration}</li><li>Tingkat nyeri: {w.painScore}/10</li><li>Gejala bahaya: {hasEmergencySymptom ? "Ada" : "Tidak"}</li></ul><p className="text-sm">Rekomendasi: {result.recommendation}</p><div className="grid grid-cols-2 gap-2 pt-2"><button onClick={()=>navigate('/booking')} className="rounded-xl bg-prime-gold py-2 text-white">Booking Pemeriksaan</button><button onClick={()=>{ localStorage.setItem('ai-screening-result', JSON.stringify(result)); setToast('Hasil screening tersimpan.'); }} className="rounded-xl border py-2">Simpan Hasil</button><button onClick={()=>{ reset({ complaintText:'', selectedSymptoms:[], duration: undefined as never, painScore:0 }); setResult(null); setCapturedImage(null); }} className="rounded-xl border py-2"><RotateCcw className="mr-1 inline" size={14}/>Ulangi Screening</button><button onClick={()=>navigate('/laporan')} className="rounded-xl border py-2">Lihat Laporan</button></div></article>}
+    {toast && <div role="status" className="fixed left-1/2 bottom-28 z-50 w-[min(390px,calc(100%-2rem))] -translate-x-1/2 rounded-xl bg-emerald-600 px-4 py-2 text-sm text-white">{toast}<button className="ml-2" onClick={()=>setToast("")} aria-label="Tutup toast"><X className="inline" size={14}/></button></div>}
   </section>;
 }
