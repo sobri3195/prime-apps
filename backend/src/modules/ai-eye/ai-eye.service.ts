@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 
 type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "EMERGENCY";
 type RecommendedAction =
@@ -105,19 +105,46 @@ function includesSymptom(symptoms: string[], keyword: string) {
   return symptoms.some((symptom) => symptom.includes(keyword));
 }
 
+function parseBoolean(value: unknown): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    return value === 1;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return ["true", "1", "yes", "ya"].includes(normalized);
+  }
+  return false;
+}
+
 @Injectable()
 export class AiEyeService {
   private data: Array<Record<string, unknown>> = [];
 
   createScreening(payload: ScreeningPayload) {
-    const painLevel = Math.min(10, Math.max(0, Number(payload.painLevel ?? 0)));
+    const rawPainLevel = Number(payload.painLevel ?? 0);
+    const painLevel = Number.isFinite(rawPainLevel)
+      ? Math.min(10, Math.max(0, rawPainLevel))
+      : 0;
     const symptoms = normalizeSymptoms(payload.symptoms);
     const hasEyePhoto = Boolean(payload.eyePhotoMetadata);
+    const sanitizedFlags = {
+      blurredVision: parseBoolean(payload.blurredVision),
+      traumaHistory: parseBoolean(payload.traumaHistory),
+      suddenVisionLoss: parseBoolean(payload.suddenVisionLoss),
+      severeHeadacheNausea: parseBoolean(payload.severeHeadacheNausea),
+      contactLensUse: parseBoolean(payload.contactLensUse),
+      photophobia: parseBoolean(payload.photophobia),
+      discharge: parseBoolean(payload.discharge),
+      oneEyeOnly: parseBoolean(payload.oneEyeOnly),
+    };
     const triggeredEmergencyRules = emergencyRules.filter((rule) =>
-      Boolean(payload[rule.key]),
+      parseBoolean(payload[rule.key]),
     );
     const triggeredWeightedFactors = weightedRiskFactors.filter((factor) =>
-      Boolean(payload[factor.key]),
+      parseBoolean(payload[factor.key]),
     );
     const symptomRisk =
       (includesSymptom(symptoms, "nyeri") ? 2 : 0) +
@@ -140,18 +167,18 @@ export class AiEyeService {
     if (
       triggeredEmergencyRules.length > 0 ||
       painLevel >= 9 ||
-      (payload.blurredVision && painLevel >= 7)
+      (sanitizedFlags.blurredVision && painLevel >= 7)
     ) {
       riskLevel = "EMERGENCY";
       recommendedAction = "EMERGENCY_NOW";
     } else if (
       riskScore >= 11 ||
-      (payload.contactLensUse &&
-        (payload.photophobia || payload.blurredVision || painLevel >= 5))
+      (sanitizedFlags.contactLensUse &&
+        (sanitizedFlags.photophobia || sanitizedFlags.blurredVision || painLevel >= 5))
     ) {
       riskLevel = "HIGH";
       recommendedAction = "PRIORITY_CHECK";
-    } else if (riskScore >= 6 || painLevel >= 5 || payload.blurredVision) {
+    } else if (riskScore >= 6 || painLevel >= 5 || sanitizedFlags.blurredVision) {
       riskLevel = "MEDIUM";
       recommendedAction = "ROUTINE_CHECK";
     }
@@ -197,6 +224,7 @@ export class AiEyeService {
     const result = {
       id: crypto.randomUUID(),
       ...payload,
+      ...sanitizedFlags,
       symptoms,
       painLevel,
       riskScore,
@@ -225,10 +253,14 @@ export class AiEyeService {
   }
 
   getScreenings() {
-    return this.data;
+    return [...this.data].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   }
 
   getScreeningById(id: string) {
-    return this.data.find((row) => row.id === id) ?? null;
+    const screening = this.data.find((row) => row.id === id);
+    if (!screening) {
+      throw new NotFoundException(`Screening dengan id ${id} tidak ditemukan.`);
+    }
+    return screening;
   }
 }
